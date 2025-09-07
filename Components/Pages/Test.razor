@@ -1,0 +1,123 @@
+@page "/test"
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Test - TunCRM</PageTitle>
+
+<div class="container mt-4">
+    <h1>Test Sayfası</h1>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Basit Test Butonları</h5>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-primary mb-2" @onclick="TestButton1">
+                        Test 1 - Console.WriteLine
+                    </button>
+                    <br>
+                    <button class="btn btn-success mb-2" @onclick="TestButton2">
+                        Test 2 - Alert
+                    </button>
+                    <br>
+                    <button class="btn btn-warning mb-2" @onclick="TestButton3">
+                        Test 3 - State Change
+                    </button>
+                    <br>
+                    <button class="btn btn-info mb-2" @onclick="TestButton4">
+                        Test 4 - Modal Toggle
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Test Sonuçları</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Test Sayacı:</strong> @testCounter</p>
+                    <p><strong>Son Mesaj:</strong> @lastMessage</p>
+                    <p><strong>Modal Açık:</strong> @showTestModal</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    @if (showTestModal)
+    {
+        <div class="modal" style="display: block; background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Test Modal</h5>
+                        <button type="button" class="btn-close" @onclick="CloseTestModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Bu bir test modal'ıdır!</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseTestModal">Kapat</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private int testCounter = 0;
+    private string lastMessage = "Henüz test yapılmadı";
+    private bool showTestModal = false;
+
+    private void TestButton1()
+    {
+        testCounter++;
+        lastMessage = $"Test 1 çalıştı - {DateTime.Now:HH:mm:ss}";
+        Console.WriteLine($"Test 1 çalıştı! Sayaç: {testCounter}");
+        StateHasChanged();
+    }
+
+    private async Task TestButton2()
+    {
+        testCounter++;
+        lastMessage = $"Test 2 çalıştı - {DateTime.Now:HH:mm:ss}";
+        Console.WriteLine($"Test 2 çalıştı! Sayaç: {testCounter}");
+        
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("eval", "alert('Test 2 - Alert çalıştı!')");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Alert hatası: {ex.Message}");
+        }
+        
+        StateHasChanged();
+    }
+
+    private void TestButton3()
+    {
+        testCounter++;
+        lastMessage = $"Test 3 çalıştı - {DateTime.Now:HH:mm:ss}";
+        Console.WriteLine($"Test 3 çalıştı! Sayaç: {testCounter}");
+        StateHasChanged();
+    }
+
+    private void TestButton4()
+    {
+        testCounter++;
+        lastMessage = $"Test 4 çalıştı - {DateTime.Now:HH:mm:ss}";
+        Console.WriteLine($"Test 4 çalıştı! Sayaç: {testCounter}");
+        showTestModal = !showTestModal;
+        StateHasChanged();
+    }
+
+    private void CloseTestModal()
+    {
+        showTestModal = false;
+        StateHasChanged();
+    }
+}
