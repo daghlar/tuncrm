@@ -1,7 +1,8 @@
 ﻿@inherits LayoutComponentBase
+@inject IJSRuntime JSRuntime
 
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="@(isDarkMode ? "dark" : "light")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -53,4 +54,31 @@
 
 @code {
     [Parameter] public string PageTitle { get; set; } = "Ana Sayfa";
+    private bool isDarkMode = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var theme = await JSRuntime.InvokeAsync<string>("eval", "localStorage.getItem('theme')");
+                if (theme == "dark")
+                {
+                    isDarkMode = true;
+                    StateHasChanged();
+                }
+            }
+            catch
+            {
+                // Ignore errors
+            }
+        }
+    }
+
+    public void UpdateTheme(bool darkMode)
+    {
+        isDarkMode = darkMode;
+        StateHasChanged();
+    }
 }

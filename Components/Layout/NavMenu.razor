@@ -1,12 +1,12 @@
 ﻿<!-- Sidebar Header -->
-<div class="sidebar-header">
+<div class="sidebar-header" data-theme="@(isDarkMode ? "dark" : "light")">
     <h1 class="sidebar-title">
         <i class="fas fa-chart-line"></i>
         TunCRM
     </h1>
     <div class="theme-toggle">
         <button class="btn btn-sm btn-outline-light" @onclick="ToggleTheme" title="Tema Değiştir">
-            <i class="fas fa-moon" id="theme-icon"></i>
+            <i class="fas @(isDarkMode ? "fa-sun" : "fa-moon")" id="theme-icon"></i>
         </button>
     </div>
 </div>
@@ -70,6 +70,7 @@
 </ul>
 
 @inject IJSRuntime JS
+@inject MainLayout MainLayout
 
 @code {
     private bool isDarkMode = false;
@@ -106,22 +107,19 @@
 
     private async Task ToggleTheme()
     {
+        isDarkMode = !isDarkMode;
+        Console.WriteLine($"Tema değiştiriliyor: {(isDarkMode ? "dark" : "light")}");
+        
         try
         {
-            isDarkMode = !isDarkMode;
-            var theme = isDarkMode ? "dark" : "light";
-            
-            Console.WriteLine($"Tema değiştiriliyor: {theme}");
-            
-            await JS.InvokeVoidAsync("eval", $"setTheme('{theme}')");
-            await JS.InvokeVoidAsync("eval", $"localStorage.setItem('theme', '{theme}')");
-            await JS.InvokeVoidAsync("eval", $"updateThemeIcon({isDarkMode.ToString().ToLower()})");
-            
-            Console.WriteLine("Tema değiştirildi!");
+            await JSRuntime.InvokeVoidAsync("eval", $"localStorage.setItem('theme', '{(isDarkMode ? "dark" : "light")}')");
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"Tema değiştirme hatası: {ex.Message}");
+            // Ignore errors
         }
+        
+        MainLayout.UpdateTheme(isDarkMode);
+        StateHasChanged();
     }
 }
