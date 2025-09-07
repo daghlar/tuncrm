@@ -75,49 +75,16 @@
 @code {
     private bool isDarkMode = false;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override void OnInitialized()
     {
-        if (firstRender)
-        {
-            try
-            {
-                // LocalStorage'dan tema tercihini oku
-                var theme = await JS.InvokeAsync<string>("eval", "localStorage.getItem('theme')");
-                Console.WriteLine($"Yüklenen tema: {theme}");
-                
-                if (theme == "dark")
-                {
-                    isDarkMode = true;
-                    await JS.InvokeVoidAsync("eval", "setTheme('dark')");
-                    await JS.InvokeVoidAsync("eval", "updateThemeIcon(true)");
-                }
-                else
-                {
-                    isDarkMode = false;
-                    await JS.InvokeVoidAsync("eval", "setTheme('light')");
-                    await JS.InvokeVoidAsync("eval", "updateThemeIcon(false)");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Tema yükleme hatası: {ex.Message}");
-            }
-        }
+        // Tema state'ini başlat
+        isDarkMode = false;
     }
 
-    private async Task ToggleTheme()
+    private void ToggleTheme()
     {
         isDarkMode = !isDarkMode;
         Console.WriteLine($"Tema değiştiriliyor: {(isDarkMode ? "dark" : "light")}");
-        
-        try
-        {
-            await JS.InvokeVoidAsync("eval", $"localStorage.setItem('theme', '{(isDarkMode ? "dark" : "light")}')");
-        }
-        catch
-        {
-            // Ignore errors
-        }
         
         MainLayout.UpdateTheme(isDarkMode);
         StateHasChanged();

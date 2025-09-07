@@ -56,24 +56,10 @@
     [Parameter] public string PageTitle { get; set; } = "Ana Sayfa";
     private bool isDarkMode = false;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override void OnInitialized()
     {
-        if (firstRender)
-        {
-            try
-            {
-                var theme = await JSRuntime.InvokeAsync<string>("eval", "localStorage.getItem('theme')");
-                if (theme == "dark")
-                {
-                    isDarkMode = true;
-                    StateHasChanged();
-                }
-            }
-            catch
-            {
-                // Ignore errors
-            }
-        }
+        // Tema state'ini başlat
+        isDarkMode = false;
     }
 
     public void UpdateTheme(bool darkMode)
