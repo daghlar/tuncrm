@@ -10,6 +10,8 @@
                class="form-control search-input" 
                placeholder="Tüm verilerde ara... (Ctrl+K)"
                @bind="searchQuery"
+               @bind:event="oninput"
+               @oninput="OnInput"
                @onkeydown="OnKeyDown" />
         <div class="search-shortcut">Ctrl+K</div>
     </div>
@@ -94,6 +96,12 @@
         }
 
         searchTimer = new Timer(async _ => await PerformSearch(), null, 300, Timeout.Infinite);
+    }
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        searchQuery = e.Value?.ToString() ?? string.Empty;
+        await OnSearchQueryChanged();
     }
 
     private async Task PerformSearch()

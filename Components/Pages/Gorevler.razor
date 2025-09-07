@@ -81,14 +81,14 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label class="form-label">Arama</label>
-                    <input type="text" class="form-control" @bind="searchFilter" @onkeyup="OnSearchChanged" 
+                    <input type="text" class="form-control" @bind="searchFilter" @oninput="OnSearchChanged" 
                            placeholder="Görev başlığı ile ara...">
                 </div>
             </div>
             <div class="col-md-2">
                 <div class="form-group">
                     <label class="form-label">Durum</label>
-                    <select class="form-control" @bind="durumFilter" @bind:after="OnFilterChanged">
+                    <select class="form-control" @bind="durumFilter" @onchange="OnFilterChanged">
                         <option value="">Tüm Durumlar</option>
                         <option value="1">Beklemede</option>
                         <option value="2">Devam Ediyor</option>
@@ -100,7 +100,7 @@
             <div class="col-md-2">
                 <div class="form-group">
                     <label class="form-label">Öncelik</label>
-                    <select class="form-control" @bind="oncelikFilter" @bind:after="OnFilterChanged">
+                    <select class="form-control" @bind="oncelikFilter" @onchange="OnFilterChanged">
                         <option value="">Tüm Öncelikler</option>
                         <option value="1">Düşük</option>
                         <option value="2">Normal</option>
@@ -112,7 +112,7 @@
             <div class="col-md-2">
                 <div class="form-group">
                     <label class="form-label">Atanan</label>
-                    <select class="form-control" @bind="atananFilter" @bind:after="OnFilterChanged">
+                    <select class="form-control" @bind="atananFilter" @onchange="OnFilterChanged">
                         <option value="">Tüm Kullanıcılar</option>
                         @foreach (var kullanici in kullanicilar)
                         {
@@ -124,7 +124,7 @@
             <div class="col-md-2">
                 <div class="form-group">
                     <label class="form-label">Firma</label>
-                    <select class="form-control" @bind="firmaFilter" @bind:after="OnFilterChanged">
+                    <select class="form-control" @bind="firmaFilter" @onchange="OnFilterChanged">
                         <option value="">Tüm Firmalar</option>
                         @foreach (var firma in firmalar)
                         {

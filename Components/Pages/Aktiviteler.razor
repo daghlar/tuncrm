@@ -37,14 +37,14 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label class="form-label">Arama</label>
-                    <input type="text" class="form-control" @bind="searchFilter" @onkeyup="OnSearchChanged" 
+                    <input type="text" class="form-control" @bind="searchFilter" @oninput="OnSearchChanged" 
                            placeholder="Aktivite başlığı ile ara...">
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="form-group">
                     <label class="form-label">Tip</label>
-                    <select class="form-control" @bind="typeFilter" @bind:after="OnFilterChanged">
+                    <select class="form-control" @bind="typeFilter" @onchange="OnFilterChanged">
                         <option value="">Tüm Tipler</option>
                         <option value="1">Telefon</option>
                         <option value="2">Email</option>
@@ -57,7 +57,7 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label class="form-label">Firma</label>
-                    <select class="form-control" @bind="firmaFilter" @bind:after="OnFilterChanged">
+                    <select class="form-control" @bind="firmaFilter" @onchange="OnFilterChanged">
                         <option value="">Tüm Firmalar</option>
                         @foreach (var firma in firmalar)
                         {
@@ -69,7 +69,7 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label class="form-label">Tarih Aralığı</label>
-                    <select class="form-control" @bind="dateFilter" @bind:after="OnFilterChanged">
+                    <select class="form-control" @bind="dateFilter" @onchange="OnFilterChanged">
                         <option value="">Tüm Tarihler</option>
                         <option value="today">Bugün</option>
                         <option value="week">Bu Hafta</option>

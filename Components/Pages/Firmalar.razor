@@ -42,14 +42,14 @@
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label">Arama</label>
-                    <input type="text" class="form-control" @bind="searchFilter" @onkeyup="OnSearchChanged" 
+                    <input type="text" class="form-control" @bind="searchFilter" @bind:event="oninput" @oninput="OnSearchChanged" 
                            placeholder="Firma adı, telefon veya email ile ara...">
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="form-group">
                     <label class="form-label">Şehir</label>
-                    <select class="form-control" @bind="cityFilter" @bind:after="OnFilterChanged">
+                    <select class="form-control" @bind="cityFilter" @onchange="OnFilterChanged">
                         <option value="">Tüm Şehirler</option>
                         @foreach (var city in cities)
                         {
@@ -61,7 +61,7 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label class="form-label">Sıralama</label>
-                    <select class="form-control" @bind="sortBy" @bind:after="OnFilterChanged">
+                    <select class="form-control" @bind="sortBy" @onchange="OnFilterChanged">
                         <option value="name">Firma Adı</option>
                         <option value="date">Oluşturma Tarihi</option>
                         <option value="city">Şehir</option>
@@ -375,14 +375,15 @@
         };
     }
 
-    private async Task OnSearchChanged()
+    private async Task OnSearchChanged(ChangeEventArgs e)
     {
+        searchFilter = e.Value?.ToString() ?? string.Empty;
         await Task.Delay(300); // Debounce
         ApplyFilters();
         StateHasChanged();
     }
 
-    private void OnFilterChanged()
+    private void OnFilterChanged(ChangeEventArgs e)
     {
         ApplyFilters();
         StateHasChanged();
