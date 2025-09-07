@@ -19,7 +19,7 @@
                 <p class="text-muted mb-0">Müşteri firmalarını yönetin</p>
             </div>
             <div>
-                <button class="btn btn-success me-2" @onclick="OpenAddModal">
+                <button class="btn btn-success me-2" @onclick="OpenAddModal" @onclick:preventDefault="false">
                     <i class="fas fa-plus"></i>
                     Yeni Firma
                 </button>
@@ -400,12 +400,19 @@
 
     private void OpenAddModal()
     {
-        Console.WriteLine("OpenAddModal called");
-        currentFirma = new Firma();
-        isEditing = false;
-        showModal = true;
-        Console.WriteLine("Add modal opened - showModal: " + showModal);
-        StateHasChanged();
+        try
+        {
+            Console.WriteLine("OpenAddModal called");
+            currentFirma = new Firma();
+            isEditing = false;
+            showModal = true;
+            Console.WriteLine("Add modal opened - showModal: " + showModal);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"OpenAddModal error: {ex.Message}");
+        }
     }
 
     private void EditFirma(Firma firma)
@@ -487,7 +494,7 @@
             var fileName = $"Firmalar_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
             var base64Data = Convert.ToBase64String(excelData);
             
-            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, base64Data);
+            await JSRuntime.InvokeVoidAsync("eval", $"downloadFile('{fileName}', '{base64Data}')");
             Console.WriteLine("Excel dosyası başarıyla indirildi!");
         }
         catch (Exception ex)

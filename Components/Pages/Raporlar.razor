@@ -665,7 +665,7 @@
             };
 
             var fileName = $"{selectedReportType}_raporu_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
-            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(pdfBytes));
+            await JSRuntime.InvokeVoidAsync("eval", "downloadFile( fileName, Convert.ToBase64String(pdfBytes));
 
             Console.WriteLine("PDF raporu başarıyla oluşturuldu ve indirildi!");
         }
