@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TunCRM")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5adc5117ac031f283b30d14cc34ba0d9df1f4130")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+91dac3de0d87d03e580a3efde909b20c1ae23709")]
 [assembly: System.Reflection.AssemblyProductAttribute("TunCRM")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TunCRM")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

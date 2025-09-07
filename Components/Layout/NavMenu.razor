@@ -112,7 +112,7 @@
         
         try
         {
-            await JSRuntime.InvokeVoidAsync("eval", $"localStorage.setItem('theme', '{(isDarkMode ? "dark" : "light")}')");
+            await JS.InvokeVoidAsync("eval", $"localStorage.setItem('theme', '{(isDarkMode ? "dark" : "light")}')");
         }
         catch
         {
