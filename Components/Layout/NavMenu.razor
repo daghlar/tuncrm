@@ -78,24 +78,50 @@
     {
         if (firstRender)
         {
-            // LocalStorage'dan tema tercihini oku
-            var theme = await JS.InvokeAsync<string>("localStorage.getItem", "theme");
-            if (theme == "dark")
+            try
             {
-                isDarkMode = true;
-                await JS.InvokeVoidAsync("setTheme", "dark");
-                await JS.InvokeVoidAsync("updateThemeIcon", true);
+                // LocalStorage'dan tema tercihini oku
+                var theme = await JS.InvokeAsync<string>("eval", "localStorage.getItem('theme')");
+                Console.WriteLine($"Yüklenen tema: {theme}");
+                
+                if (theme == "dark")
+                {
+                    isDarkMode = true;
+                    await JS.InvokeVoidAsync("eval", "setTheme('dark')");
+                    await JS.InvokeVoidAsync("eval", "updateThemeIcon(true)");
+                }
+                else
+                {
+                    isDarkMode = false;
+                    await JS.InvokeVoidAsync("eval", "setTheme('light')");
+                    await JS.InvokeVoidAsync("eval", "updateThemeIcon(false)");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Tema yükleme hatası: {ex.Message}");
             }
         }
     }
 
     private async Task ToggleTheme()
     {
-        isDarkMode = !isDarkMode;
-        var theme = isDarkMode ? "dark" : "light";
-        
-        await JS.InvokeVoidAsync("setTheme", theme);
-        await JS.InvokeVoidAsync("localStorage.setItem", "theme", theme);
-        await JS.InvokeVoidAsync("updateThemeIcon", isDarkMode);
+        try
+        {
+            isDarkMode = !isDarkMode;
+            var theme = isDarkMode ? "dark" : "light";
+            
+            Console.WriteLine($"Tema değiştiriliyor: {theme}");
+            
+            await JS.InvokeVoidAsync("eval", $"setTheme('{theme}')");
+            await JS.InvokeVoidAsync("eval", $"localStorage.setItem('theme', '{theme}')");
+            await JS.InvokeVoidAsync("eval", $"updateThemeIcon({isDarkMode.ToString().ToLower()})");
+            
+            Console.WriteLine("Tema değiştirildi!");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Tema değiştirme hatası: {ex.Message}");
+        }
     }
 }
