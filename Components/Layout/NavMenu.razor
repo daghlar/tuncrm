@@ -70,7 +70,6 @@
 </ul>
 
 @inject IJSRuntime JS
-@inject MainLayout MainLayout
 
 @code {
     private bool isDarkMode = false;
@@ -81,12 +80,20 @@
         isDarkMode = false;
     }
 
-    private void ToggleTheme()
+    private async Task ToggleTheme()
     {
         isDarkMode = !isDarkMode;
         Console.WriteLine($"Tema değiştiriliyor: {(isDarkMode ? "dark" : "light")}");
         
-        MainLayout.UpdateTheme(isDarkMode);
+        try
+        {
+            await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-theme', '{(isDarkMode ? "dark" : "light")}')");
+        }
+        catch
+        {
+            // Ignore errors
+        }
+        
         StateHasChanged();
     }
 }
