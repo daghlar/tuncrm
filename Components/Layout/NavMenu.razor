@@ -80,20 +80,10 @@
         isDarkMode = false;
     }
 
-    private async Task ToggleTheme()
+    private void ToggleTheme()
     {
         isDarkMode = !isDarkMode;
         Console.WriteLine($"Tema değiştiriliyor: {(isDarkMode ? "dark" : "light")}");
-        
-        try
-        {
-            await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-theme', '{(isDarkMode ? "dark" : "light")}')");
-        }
-        catch
-        {
-            // Ignore errors
-        }
-        
         StateHasChanged();
     }
 }
