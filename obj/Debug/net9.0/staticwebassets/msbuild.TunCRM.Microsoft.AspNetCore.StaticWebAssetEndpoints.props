@@ -64,13 +64,13 @@
       <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\js\file-download.js'))</AssetFile>
       <Selectors><![CDATA[[]]]></Selectors>
       <EndpointProperties><![CDATA[[{"Name":"integrity","Value":"sha256-HMX4hPLDfZO5ZCCXTH2ybFr4ioh89RqX6KKOhb8m1BQ="}]]]></EndpointProperties>
-      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"no-cache"},{"Name":"Content-Length","Value":"1443"},{"Name":"Content-Type","Value":"text/javascript"},{"Name":"ETag","Value":"\u0022HMX4hPLDfZO5ZCCXTH2ybFr4ioh89RqX6KKOhb8m1BQ=\u0022"},{"Name":"Last-Modified","Value":"Sun, 07 Sep 2025 12:32:54 GMT"}]]]></ResponseHeaders>
+      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"no-cache"},{"Name":"Content-Length","Value":"1443"},{"Name":"Content-Type","Value":"text/javascript"},{"Name":"ETag","Value":"\u0022HMX4hPLDfZO5ZCCXTH2ybFr4ioh89RqX6KKOhb8m1BQ=\u0022"},{"Name":"Last-Modified","Value":"Sun, 07 Sep 2025 13:33:17 GMT"}]]]></ResponseHeaders>
     </StaticWebAssetEndpoint>
     <StaticWebAssetEndpoint Include="_content/TunCRM/js/file-download.w9sv2euyst.js">
       <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\js\file-download.js'))</AssetFile>
       <Selectors><![CDATA[[]]]></Selectors>
       <EndpointProperties><![CDATA[[{"Name":"fingerprint","Value":"w9sv2euyst"},{"Name":"integrity","Value":"sha256-HMX4hPLDfZO5ZCCXTH2ybFr4ioh89RqX6KKOhb8m1BQ="},{"Name":"label","Value":"_content/TunCRM/js/file-download.js"}]]]></EndpointProperties>
-      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"1443"},{"Name":"Content-Type","Value":"text/javascript"},{"Name":"ETag","Value":"\u0022HMX4hPLDfZO5ZCCXTH2ybFr4ioh89RqX6KKOhb8m1BQ=\u0022"},{"Name":"Last-Modified","Value":"Sun, 07 Sep 2025 12:32:54 GMT"}]]]></ResponseHeaders>
+      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"1443"},{"Name":"Content-Type","Value":"text/javascript"},{"Name":"ETag","Value":"\u0022HMX4hPLDfZO5ZCCXTH2ybFr4ioh89RqX6KKOhb8m1BQ=\u0022"},{"Name":"Last-Modified","Value":"Sun, 07 Sep 2025 13:33:17 GMT"}]]]></ResponseHeaders>
     </StaticWebAssetEndpoint>
     <StaticWebAssetEndpoint Include="_content/TunCRM/js/theme.61l4z7vdys.js">
       <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\js\theme.js'))</AssetFile>
@@ -616,13 +616,13 @@
       <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\TunCRM.hrm9r60nc1.bundle.scp.css'))</AssetFile>
       <Selectors><![CDATA[[]]]></Selectors>
       <EndpointProperties><![CDATA[[{"Name":"integrity","Value":"sha256-fW6ibgckOcR49rjXhwnTh5NrPNQAjaJPL9pM7\u002BBl6qU="}]]]></EndpointProperties>
-      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"no-cache"},{"Name":"Content-Length","Value":"5754"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u0022fW6ibgckOcR49rjXhwnTh5NrPNQAjaJPL9pM7\u002BBl6qU=\u0022"},{"Name":"Last-Modified","Value":"Sat, 06 Sep 2025 20:36:41 GMT"}]]]></ResponseHeaders>
+      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"no-cache"},{"Name":"Content-Length","Value":"5754"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u0022fW6ibgckOcR49rjXhwnTh5NrPNQAjaJPL9pM7\u002BBl6qU=\u0022"},{"Name":"Last-Modified","Value":"Sun, 07 Sep 2025 13:38:47 GMT"}]]]></ResponseHeaders>
     </StaticWebAssetEndpoint>
     <StaticWebAssetEndpoint Include="_content/TunCRM/TunCRM.hrm9r60nc1.bundle.scp.css">
       <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\TunCRM.hrm9r60nc1.bundle.scp.css'))</AssetFile>
       <Selectors><![CDATA[[]]]></Selectors>
       <EndpointProperties><![CDATA[[{"Name":"fingerprint","Value":"hrm9r60nc1"},{"Name":"integrity","Value":"sha256-fW6ibgckOcR49rjXhwnTh5NrPNQAjaJPL9pM7\u002BBl6qU="},{"Name":"label","Value":"_content/TunCRM/TunCRM.bundle.scp.css"}]]]></EndpointProperties>
-      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"5754"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u0022fW6ibgckOcR49rjXhwnTh5NrPNQAjaJPL9pM7\u002BBl6qU=\u0022"},{"Name":"Last-Modified","Value":"Sat, 06 Sep 2025 20:36:41 GMT"}]]]></ResponseHeaders>
+      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"5754"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u0022fW6ibgckOcR49rjXhwnTh5NrPNQAjaJPL9pM7\u002BBl6qU=\u0022"},{"Name":"Last-Modified","Value":"Sun, 07 Sep 2025 13:38:47 GMT"}]]]></ResponseHeaders>
     </StaticWebAssetEndpoint>
   </ItemGroup>
 </Project>

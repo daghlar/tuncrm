@@ -266,3 +266,4 @@
 /home/omarchy/tuncrm/TunCRM/obj/Debug/net9.0/compressed/icejn262rm-w9sv2euyst.gz
 /home/omarchy/tuncrm/TunCRM/obj/Debug/net9.0/compressed/girhy9lotq-7y3e6zuski.gz
 /home/omarchy/tuncrm/TunCRM/obj/Debug/net9.0/compressed/toy0b5l6dx-y58g3z9xkb.gz
+/home/omarchy/tuncrm/TunCRM/obj/Debug/net9.0/TunCRM.sourcelink.json

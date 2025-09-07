@@ -442,12 +442,12 @@
             if (isEditing)
             {
                 await CrmService.UpdateFirmaAsync(currentFirma);
-                await JSRuntime.InvokeVoidAsync("alert", "Firma başarıyla güncellendi!");
+                Console.WriteLine("Firma başarıyla güncellendi!");
             }
             else
             {
                 await CrmService.CreateFirmaAsync(currentFirma);
-                await JSRuntime.InvokeVoidAsync("alert", "Firma başarıyla eklendi!");
+                Console.WriteLine("Firma başarıyla eklendi!");
             }
 
             CloseModal();
@@ -455,7 +455,7 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+            Console.WriteLine($"Hata: {ex.Message}");
         }
         finally
         {
@@ -466,19 +466,15 @@
 
     private async Task DeleteFirma(int id)
     {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Bu firmayı silmek istediğinizden emin misiniz?");
-        if (confirmed)
+        try
         {
-            try
-            {
-                await CrmService.DeleteFirmaAsync(id);
-                await JSRuntime.InvokeVoidAsync("alert", "Firma başarıyla silindi!");
-                await LoadFirmalar();
-            }
-            catch (Exception ex)
-            {
-                await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
-            }
+            await CrmService.DeleteFirmaAsync(id);
+            Console.WriteLine("Firma başarıyla silindi!");
+            await LoadFirmalar();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Hata: {ex.Message}");
         }
     }
 
@@ -491,11 +487,11 @@
             var base64Data = Convert.ToBase64String(excelData);
             
             await JSRuntime.InvokeVoidAsync("downloadFile", fileName, base64Data);
-            await JSRuntime.InvokeVoidAsync("alert", "Excel dosyası başarıyla indirildi!");
+            Console.WriteLine("Excel dosyası başarıyla indirildi!");
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Excel export hatası: {ex.Message}");
+            Console.WriteLine($"Excel export hatası: {ex.Message}");
         }
     }
 
