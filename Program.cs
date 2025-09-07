@@ -94,7 +94,7 @@ builder.Services.AddScoped<CrmService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ExcelExportService>();
 builder.Services.AddScoped<PdfReportService>();
-builder.Services.AddScoped<EmailService>();
+// builder.Services.AddScoped<EmailService>(); // Geçici olarak devre dışı
 builder.Services.AddScoped<CacheService>();
 builder.Services.AddScoped<ErrorHandlingService>();
 builder.Services.AddHttpClient<GoogleMapsScraperService>();
