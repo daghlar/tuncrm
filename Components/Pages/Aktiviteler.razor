@@ -312,7 +312,7 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Veriler yüklenirken hata oluştu: {ex.Message}");
+            Console.WriteLine($"Veriler yüklenirken hata oluştu: {ex.Message}");
         }
         finally
         {
@@ -420,12 +420,12 @@
             if (isEditing)
             {
                 await CrmService.UpdateAktiviteAsync(currentAktivite);
-                await JSRuntime.InvokeVoidAsync("alert", "Aktivite başarıyla güncellendi!");
+                Console.WriteLine("Aktivite başarıyla güncellendi!");
             }
             else
             {
                 await CrmService.CreateAktiviteAsync(currentAktivite);
-                await JSRuntime.InvokeVoidAsync("alert", "Aktivite başarıyla eklendi!");
+                Console.WriteLine("Aktivite başarıyla eklendi!");
             }
 
             CloseModal();
@@ -433,7 +433,7 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+            Console.WriteLine($"Hata: {ex.Message}");
         }
         finally
         {
@@ -450,12 +450,12 @@
             try
             {
                 await CrmService.DeleteAktiviteAsync(id);
-                await JSRuntime.InvokeVoidAsync("alert", "Aktivite başarıyla silindi!");
+                Console.WriteLine("Aktivite başarıyla silindi!");
                 await LoadData();
             }
             catch (Exception ex)
             {
-                await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+                Console.WriteLine($"Hata: {ex.Message}");
             }
         }
     }

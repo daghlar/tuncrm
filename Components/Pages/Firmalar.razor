@@ -340,7 +340,7 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Firmalar yüklenirken hata oluştu: {ex.Message}");
+            Console.WriteLine($"Firmalar yüklenirken hata oluştu: {ex.Message}");
         }
         finally
         {

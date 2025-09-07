@@ -760,7 +760,7 @@ else
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Veriler yüklenirken hata oluştu: {ex.Message}");
+            Console.WriteLine($"Veriler yüklenirken hata oluştu: {ex.Message}");
         }
         finally
         {
@@ -877,12 +877,12 @@ else
             if (isEditing)
             {
                 await CrmService.UpdateGorevAsync(currentGorev);
-                await JSRuntime.InvokeVoidAsync("alert", "Görev başarıyla güncellendi!");
+                Console.WriteLine("Görev başarıyla güncellendi!");
             }
             else
             {
                 await CrmService.CreateGorevAsync(currentGorev);
-                await JSRuntime.InvokeVoidAsync("alert", "Görev başarıyla eklendi!");
+                Console.WriteLine("Görev başarıyla eklendi!");
             }
 
             CloseModal();
@@ -890,7 +890,7 @@ else
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+            Console.WriteLine($"Hata: {ex.Message}");
         }
         finally
         {
@@ -907,12 +907,12 @@ else
             try
             {
                 await CrmService.DeleteGorevAsync(id);
-                await JSRuntime.InvokeVoidAsync("alert", "Görev başarıyla silindi!");
+                Console.WriteLine("Görev başarıyla silindi!");
                 await LoadData();
             }
             catch (Exception ex)
             {
-                await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+                Console.WriteLine($"Hata: {ex.Message}");
             }
         }
     }

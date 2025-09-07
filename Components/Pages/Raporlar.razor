@@ -584,7 +584,7 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Veriler yüklenirken hata oluştu: {ex.Message}");
+            Console.WriteLine($"Veriler yüklenirken hata oluştu: {ex.Message}");
         }
         finally
         {
@@ -639,7 +639,7 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Performans metrikleri hesaplanırken hata oluştu: {ex.Message}");
+            Console.WriteLine($"Performans metrikleri hesaplanırken hata oluştu: {ex.Message}");
         }
     }
 
@@ -667,11 +667,11 @@
             var fileName = $"{selectedReportType}_raporu_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
             await JSRuntime.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(pdfBytes));
 
-            await JSRuntime.InvokeVoidAsync("alert", "PDF raporu başarıyla oluşturuldu ve indirildi!");
+            Console.WriteLine("PDF raporu başarıyla oluşturuldu ve indirildi!");
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"PDF oluşturulurken hata oluştu: {ex.Message}");
+            Console.WriteLine($"PDF oluşturulurken hata oluştu: {ex.Message}");
         }
         finally
         {

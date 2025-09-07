@@ -429,7 +429,7 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Ayarlar yüklenirken hata oluştu: {ex.Message}");
+            Console.WriteLine($"Ayarlar yüklenirken hata oluştu: {ex.Message}");
         }
         finally
         {
@@ -478,12 +478,12 @@
             currentUser.Email = editUser.Email;
             currentUser.Telefon = editUser.Telefon;
 
-            await JSRuntime.InvokeVoidAsync("alert", "Profil başarıyla güncellendi!");
+            Console.WriteLine("Profil başarıyla güncellendi!");
             CloseProfileModal();
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+            Console.WriteLine($"Hata: {ex.Message}");
         }
         finally
         {
@@ -500,23 +500,17 @@
 
     private async Task ChangePassword()
     {
-        await JSRuntime.InvokeVoidAsync("alert", "Şifre değiştirme özelliği yakında eklenecek!");
+        Console.WriteLine("Şifre değiştirme özelliği yakında eklenecek!");
     }
 
     private async Task BackupDatabase()
     {
-        await JSRuntime.InvokeVoidAsync("alert", "Veritabanı yedekleme özelliği yakında eklenecek!");
+        Console.WriteLine("Veritabanı yedekleme özelliği yakında eklenecek!");
     }
 
     private async Task ClearDatabase()
     {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            "Bu işlem tüm verileri silecektir. Devam etmek istediğinizden emin misiniz?");
-        
-        if (confirmed)
-        {
-            await JSRuntime.InvokeVoidAsync("alert", "Veritabanı temizleme özelliği yakında eklenecek!");
-        }
+        Console.WriteLine("Veritabanı temizleme özelliği yakında eklenecek!");
     }
 
     // Kullanıcı yönetimi metodları
@@ -551,11 +545,11 @@
             // User save logic here
             await LoadSettings();
             showUserModal = false;
-            await JSRuntime.InvokeVoidAsync("alert", "Kullanıcı kaydedildi!");
+            Console.WriteLine("Kullanıcı kaydedildi!");
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+            Console.WriteLine($"Hata: {ex.Message}");
         }
         finally
         {
@@ -569,11 +563,11 @@
         {
             // Toggle user status logic here
             await LoadSettings();
-            await JSRuntime.InvokeVoidAsync("alert", $"Kullanıcı durumu değiştirildi!");
+            Console.WriteLine("Kullanıcı durumu değiştirildi!");
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+            Console.WriteLine($"Hata: {ex.Message}");
         }
     }
 
@@ -591,11 +585,11 @@
                 new ScrapedCompany { Name = "Örnek Firma 2", City = "Ankara", Phone = "+90 312 987 65 43" },
                 new ScrapedCompany { Name = "Örnek Firma 3", City = "İzmir", Phone = "+90 232 555 44 33" }
             };
-            await JSRuntime.InvokeVoidAsync("alert", "Scraping tamamlandı!");
+            Console.WriteLine("Scraping tamamlandı!");
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Scraping hatası: {ex.Message}");
+            Console.WriteLine($"Scraping hatası: {ex.Message}");
         }
         finally
         {
@@ -608,11 +602,11 @@
         try
         {
             // Import company logic here
-            await JSRuntime.InvokeVoidAsync("alert", $"{company.Name} firması eklendi!");
+            Console.WriteLine($"{company.Name} firması eklendi!");
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+            Console.WriteLine($"Hata: {ex.Message}");
         }
     }
 

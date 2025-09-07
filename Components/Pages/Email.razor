@@ -396,7 +396,7 @@
     {
         if (string.IsNullOrWhiteSpace(emailTo) || string.IsNullOrWhiteSpace(emailSubject))
         {
-            await JSRuntime.InvokeVoidAsync("alert", "Lütfen alıcı email ve konu alanlarını doldurun!");
+            Console.WriteLine("Lütfen alıcı email ve konu alanlarını doldurun!");
             return;
         }
 
@@ -409,7 +409,7 @@
             
             if (success)
             {
-                await JSRuntime.InvokeVoidAsync("alert", "Email başarıyla gönderildi!");
+                Console.WriteLine("Email başarıyla gönderildi!");
                 
                 // Formu temizle
                 emailTo = "";
@@ -429,12 +429,12 @@
             }
             else
             {
-                await JSRuntime.InvokeVoidAsync("alert", "Email gönderilirken hata oluştu!");
+                Console.WriteLine("Email gönderilirken hata oluştu!");
             }
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Email gönderilirken hata oluştu: {ex.Message}");
+            Console.WriteLine($"Email gönderilirken hata oluştu: {ex.Message}");
         }
         finally
         {
@@ -447,7 +447,7 @@
     {
         if (string.IsNullOrWhiteSpace(bulkEmailSubject))
         {
-            await JSRuntime.InvokeVoidAsync("alert", "Lütfen konu alanını doldurun!");
+            Console.WriteLine("Lütfen konu alanını doldurun!");
             return;
         }
 
@@ -462,7 +462,7 @@
             
             if (success)
             {
-                await JSRuntime.InvokeVoidAsync("alert", $"Toplu email başarıyla gönderildi! ({recipients.Count} alıcı)");
+                Console.WriteLine($"Toplu email başarıyla gönderildi! ({recipients.Count} alıcı)");
                 
                 // Formu temizle
                 bulkEmailSubject = "";
@@ -470,12 +470,12 @@
             }
             else
             {
-                await JSRuntime.InvokeVoidAsync("alert", "Toplu email gönderilirken hata oluştu!");
+                Console.WriteLine("Toplu email gönderilirken hata oluştu!");
             }
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Toplu email gönderilirken hata oluştu: {ex.Message}");
+            Console.WriteLine($"Toplu email gönderilirken hata oluştu: {ex.Message}");
         }
         finally
         {
@@ -518,7 +518,7 @@
                 break;
         }
         
-        await JSRuntime.InvokeVoidAsync("alert", $"{templateType} şablonu yüklendi!");
+        Console.WriteLine($"{templateType} şablonu yüklendi!");
     }
 
     private async Task RefreshData()

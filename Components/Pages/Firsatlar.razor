@@ -707,7 +707,7 @@ else
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Veriler yüklenirken hata oluştu: {ex.Message}");
+            Console.WriteLine($"Veriler yüklenirken hata oluştu: {ex.Message}");
         }
         finally
         {
@@ -809,7 +809,7 @@ else
             }
             catch (Exception ex)
             {
-                await JSRuntime.InvokeVoidAsync("alert", $"Aşama güncellenirken hata oluştu: {ex.Message}");
+                Console.WriteLine($"Aşama güncellenirken hata oluştu: {ex.Message}");
             }
         }
         
@@ -854,12 +854,12 @@ else
             if (isEditing)
             {
                 await CrmService.UpdateFirsatAsync(currentFirsat);
-                await JSRuntime.InvokeVoidAsync("alert", "Fırsat başarıyla güncellendi!");
+                Console.WriteLine("Fırsat başarıyla güncellendi!");
             }
             else
             {
                 await CrmService.CreateFirsatAsync(currentFirsat);
-                await JSRuntime.InvokeVoidAsync("alert", "Fırsat başarıyla eklendi!");
+                Console.WriteLine("Fırsat başarıyla eklendi!");
             }
 
             CloseModal();
@@ -867,7 +867,7 @@ else
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+            Console.WriteLine($"Hata: {ex.Message}");
         }
         finally
         {
@@ -884,12 +884,12 @@ else
             try
             {
                 await CrmService.DeleteFirsatAsync(id);
-                await JSRuntime.InvokeVoidAsync("alert", "Fırsat başarıyla silindi!");
+                Console.WriteLine("Fırsat başarıyla silindi!");
                 await LoadData();
             }
             catch (Exception ex)
             {
-                await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+                Console.WriteLine($"Hata: {ex.Message}");
             }
         }
     }
