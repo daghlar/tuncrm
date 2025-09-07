@@ -1,0 +1,253 @@
+@page "/login"
+@using TunCRM.Services
+@using TunCRM.Models
+@using System.ComponentModel.DataAnnotations
+@using TunCRM.Components.Layout
+@inject AuthService AuthService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@layout LoginLayout
+
+<PageTitle>Giriş - TunCRM</PageTitle>
+
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <h1 class="login-title">
+                <i class="fas fa-chart-line"></i>
+                TunCRM
+            </h1>
+            <p class="login-subtitle">Müşteri İlişkileri Yönetimi</p>
+        </div>
+
+        <div class="login-body">
+            <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+                <DataAnnotationsValidator />
+                
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        @errorMessage
+                    </div>
+                }
+
+                <div class="form-group">
+                    <label class="form-label">Email Adresi</label>
+                    <InputText class="form-control" @bind-Value="loginModel.Email" placeholder="ornek@email.com" />
+                    <ValidationMessage For="@(() => loginModel.Email)" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Şifre</label>
+                    <InputText type="password" class="form-control" @bind-Value="loginModel.Password" placeholder="Şifrenizi giriniz" />
+                    <ValidationMessage For="@(() => loginModel.Password)" />
+                </div>
+
+                <div class="form-group">
+                    <div class="form-check">
+                        <InputCheckbox class="form-check-input" @bind-Value="loginModel.RememberMe" />
+                        <label class="form-check-label">Beni hatırla</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100" disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                        <text>Giriş yapılıyor...</text>
+                    }
+                    else
+                    {
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        <text>Giriş Yap</text>
+                    }
+                </button>
+            </EditForm>
+        </div>
+
+        <div class="login-footer">
+            <p class="text-muted">
+                Hesabınız yok mu? 
+                <a href="/register" class="text-primary">Kayıt olun</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .login-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+    }
+
+    .login-card {
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+        overflow: hidden;
+    }
+
+    .login-header {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .login-title {
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .login-subtitle {
+        margin: 0;
+        opacity: 0.9;
+    }
+
+    .login-body {
+        padding: 2rem;
+    }
+
+    .login-footer {
+        padding: 1rem 2rem 2rem;
+        text-align: center;
+        background-color: #f8f9fa;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        border: 2px solid #e9ecef;
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.6;
+        transform: none;
+    }
+
+    .alert {
+        border-radius: 0.5rem;
+        border: none;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+</style>
+
+@code {
+    private LoginModel loginModel = new();
+    private string errorMessage = string.Empty;
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // OnInitializedAsync'de JS interop kullanılamaz, OnAfterRenderAsync'de yapılacak
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Eğer kullanıcı zaten giriş yapmışsa ana sayfaya yönlendir
+            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+            if (!string.IsNullOrEmpty(token))
+            {
+                Navigation.NavigateTo("/");
+            }
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+            StateHasChanged();
+
+            var result = await AuthService.LoginAsync(loginModel.Email, loginModel.Password);
+
+            if (result.Success)
+            {
+                // Token'ı localStorage'a kaydet
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "authToken", result.Token);
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "userInfo", 
+                    System.Text.Json.JsonSerializer.Serialize(result.User));
+
+                // Ana sayfaya yönlendir
+                Navigation.NavigateTo("/", true);
+            }
+            else
+            {
+                errorMessage = result.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Giriş sırasında bir hata oluştu. Lütfen tekrar deneyiniz.";
+            Console.WriteLine($"Login error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    public class LoginModel
+    {
+        [Required(ErrorMessage = "Email adresi gereklidir")]
+        [EmailAddress(ErrorMessage = "Geçerli bir email adresi giriniz")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Şifre gereklidir")]
+        [MinLength(6, ErrorMessage = "Şifre en az 6 karakter olmalıdır")]
+        public string Password { get; set; } = string.Empty;
+
+        public bool RememberMe { get; set; } = false;
+    }
+}

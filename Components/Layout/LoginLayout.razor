@@ -1,0 +1,31 @@
+@inherits LayoutComponentBase
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TunCRM - Müşteri İlişkileri Yönetimi</title>
+    <base href="/" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="app.css" rel="stylesheet" />
+    <HeadOutlet />
+</head>
+<body>
+    @Body
+
+    <div id="blazor-error-ui" data-nosnippet>
+        <div class="alert alert-danger" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Beklenmeyen bir hata oluştu.
+            <a href="." class="btn btn-sm btn-outline-danger ms-2">Yeniden Yükle</a>
+            <span class="dismiss">🗙</span>
+        </div>
+    </div>
+
+    <script src="_framework/blazor.web.js"></script>
+    <script src="bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/file-download.js"></script>
+</body>
+</html>

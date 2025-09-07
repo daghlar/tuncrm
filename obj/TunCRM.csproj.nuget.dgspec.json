@@ -1,0 +1,140 @@
+{
+  "format": 1,
+  "restore": {
+    "/home/omarchy/tuncrm/TunCRM/TunCRM.csproj": {}
+  },
+  "projects": {
+    "/home/omarchy/tuncrm/TunCRM/TunCRM.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/omarchy/tuncrm/TunCRM/TunCRM.csproj",
+        "projectName": "TunCRM",
+        "projectPath": "/home/omarchy/tuncrm/TunCRM/TunCRM.csproj",
+        "packagesPath": "/home/omarchy/.nuget/packages/",
+        "outputPath": "/home/omarchy/tuncrm/TunCRM/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/omarchy/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.100"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "dependencies": {
+            "BCrypt.Net-Next": {
+              "target": "Package",
+              "version": "[4.0.3, )"
+            },
+            "ClosedXML": {
+              "target": "Package",
+              "version": "[0.105.0, )"
+            },
+            "DinkToPdf": {
+              "target": "Package",
+              "version": "[1.0.8, )"
+            },
+            "HtmlAgilityPack": {
+              "target": "Package",
+              "version": "[1.12.2, )"
+            },
+            "MailKit": {
+              "target": "Package",
+              "version": "[4.3.0, )"
+            },
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[9.0.0, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[9.0.8, )"
+            },
+            "Microsoft.EntityFrameworkCore.Sqlite": {
+              "target": "Package",
+              "version": "[9.0.8, )"
+            },
+            "MimeKit": {
+              "target": "Package",
+              "version": "[4.8.0, )"
+            },
+            "RazorEngine.NetCore": {
+              "target": "Package",
+              "version": "[2.0.0, )"
+            },
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[7.0.0, )"
+            },
+            "System.ComponentModel.Annotations": {
+              "target": "Package",
+              "version": "[5.0.0, )"
+            },
+            "System.IdentityModel.Tokens.Jwt": {
+              "target": "Package",
+              "version": "[8.0.2, )"
+            },
+            "System.Net.Http": {
+              "target": "Package",
+              "version": "[4.3.4, )"
+            },
+            "iTextSharp": {
+              "target": "Package",
+              "version": "[5.5.13.3, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[9.0.8, 9.0.8]"
+            }
+          ],
+          "frameworkReferences": {
+            "Microsoft.AspNetCore.App": {
+              "privateAssets": "none"
+            },
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/9.0.109/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

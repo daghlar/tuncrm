@@ -1,0 +1,537 @@
+@page "/email"
+@using TunCRM.Services
+@using TunCRM.Models
+@inject EmailService EmailService
+@inject CrmService CrmService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Email Yönetimi - TunCRM</PageTitle>
+
+<!-- Sayfa Başlığı -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="card-title">
+                    <i class="fas fa-envelope text-primary"></i>
+                    Email Yönetimi
+                </h1>
+                <p class="text-muted mb-0">Email gönderimi ve şablon yönetimi</p>
+            </div>
+            <div>
+                <button class="btn btn-success" @onclick="RefreshData">
+                    <i class="fas fa-sync-alt"></i>
+                    Yenile
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Email Gönderimi -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-paper-plane text-success"></i>
+                    Email Gönder
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Alıcı Email</label>
+                            <input type="email" class="form-control" @bind="emailTo" placeholder="ornek@email.com">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Alıcı Adı</label>
+                            <input type="text" class="form-control" @bind="emailToName" placeholder="Ad Soyad">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label class="form-label">Konu</label>
+                            <input type="text" class="form-control" @bind="emailSubject" placeholder="Email konusu">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label class="form-label">İçerik</label>
+                            <textarea class="form-control" rows="8" @bind="emailBody" placeholder="Email içeriği (HTML desteklenir)"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" @bind="isHtmlEmail" id="isHtml">
+                            <label class="form-check-label" for="isHtml">
+                                HTML Email
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <button class="btn btn-primary" @onclick="SendSingleEmail" disabled="@isSendingEmail">
+                            @if (isSendingEmail)
+                            {
+                                <span class="spinner-border spinner-border-sm"></span>
+                                <span class="ms-2">Gönderiliyor...</span>
+                            }
+                            else
+                            {
+                                <i class="fas fa-paper-plane"></i>
+                                <span class="ms-2">Email Gönder</span>
+                            }
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toplu Email Gönderimi -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-users text-info"></i>
+                    Toplu Email Gönder
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Alıcı Grubu</label>
+                            <select class="form-control" @bind="selectedGroup">
+                                <option value="all">Tüm Kullanıcılar</option>
+                                <option value="admin">Adminler</option>
+                                <option value="manager">Yöneticiler</option>
+                                <option value="sales">Satış Ekibi</option>
+                                <option value="custom">Özel Liste</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Email Sayısı</label>
+                            <input type="number" class="form-control" @bind="bulkEmailCount" min="1" max="1000">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label class="form-label">Konu</label>
+                            <input type="text" class="form-control" @bind="bulkEmailSubject" placeholder="Toplu email konusu">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label class="form-label">İçerik</label>
+                            <textarea class="form-control" rows="6" @bind="bulkEmailBody" placeholder="Toplu email içeriği"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 text-end">
+                        <button class="btn btn-info" @onclick="SendBulkEmail" disabled="@isSendingBulkEmail">
+                            @if (isSendingBulkEmail)
+                            {
+                                <span class="spinner-border spinner-border-sm"></span>
+                                <span class="ms-2">Gönderiliyor...</span>
+                            }
+                            else
+                            {
+                                <i class="fas fa-users"></i>
+                                <span class="ms-2">Toplu Email Gönder</span>
+                            }
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Email Şablonları -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-file-alt text-warning"></i>
+                    Email Şablonları
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-tasks fa-3x text-primary mb-3"></i>
+                                <h5>Gorev Hatirlatmasi</h5>
+                                <p class="text-muted">Gecikmis ve yaklasan gorevler icin</p>
+                                <button class="btn btn-outline-primary" @onclick="@(() => LoadTemplate("gorev"))">
+                                    <i class="fas fa-eye"></i> Onizle
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-handshake fa-3x text-success mb-3"></i>
+                                <h5>Firsat Hatirlatmasi</h5>
+                                <p class="text-muted">Firsat takibi ve guncellemeler icin</p>
+                                <button class="btn btn-outline-success" @onclick="@(() => LoadTemplate("firsat"))">
+                                    <i class="fas fa-eye"></i> Onizle
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-calendar fa-3x text-info mb-3"></i>
+                                <h5>Aktivite Hatirlatmasi</h5>
+                                <p class="text-muted">Yaklasan aktiviteler icin</p>
+                                <button class="btn btn-outline-info" @onclick="@(() => LoadTemplate("aktivite"))">
+                                    <i class="fas fa-eye"></i> Onizle
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Email Geçmişi -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-history text-secondary"></i>
+                    Email Geçmişi
+                </h5>
+            </div>
+            <div class="card-body">
+                @if (emailHistory.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Tarih</th>
+                                    <th>Alıcı</th>
+                                    <th>Konu</th>
+                                    <th>Durum</th>
+                                    <th>Tür</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var email in emailHistory)
+                                {
+                                    <tr>
+                                        <td>@email.Date.ToString("dd.MM.yyyy HH:mm")</td>
+                                        <td>@email.Recipient</td>
+                                        <td>@email.Subject</td>
+                                        <td>
+                                            <span class="badge @(email.Success ? "bg-success" : "bg-danger")">
+                                                @(email.Success ? "Başarılı" : "Başarısız")
+                                            </span>
+                                        </td>
+                                        <td>@email.Type</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="fas fa-envelope fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Email geçmişi bulunamadı</h5>
+                        <p class="text-muted">Henüz email gönderilmemiş.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border-radius: 0.5rem;
+    }
+
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        border-radius: 0.5rem 0.5rem 0 0 !important;
+    }
+
+    .card-title {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .text-primary { color: #007bff !important; }
+    .text-success { color: #28a745 !important; }
+    .text-info { color: #17a2b8 !important; }
+    .text-warning { color: #ffc107 !important; }
+    .text-muted { color: #6c757d !important; }
+
+    .badge {
+        padding: 0.35em 0.65em;
+        border-radius: 0.25rem;
+        font-weight: bold;
+        color: white;
+        font-size: 0.75em;
+    }
+
+    .bg-success { background-color: #28a745 !important; }
+    .bg-danger { background-color: #dc3545 !important; }
+    .bg-primary { background-color: #007bff !important; }
+    .bg-info { background-color: #17a2b8 !important; }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    .form-control:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .btn {
+        border-radius: 0.375rem;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+    }
+
+    .btn-primary { background-color: #007bff; border-color: #007bff; }
+    .btn-success { background-color: #28a745; border-color: #28a745; }
+    .btn-info { background-color: #17a2b8; border-color: #17a2b8; }
+    .btn-outline-primary { color: #007bff; border-color: #007bff; }
+    .btn-outline-success { color: #28a745; border-color: #28a745; }
+    .btn-outline-info { color: #17a2b8; border-color: #17a2b8; }
+
+    .form-check-input:checked {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+</style>
+
+@code {
+    // Email gönderimi
+    private string emailTo = "";
+    private string emailToName = "";
+    private string emailSubject = "";
+    private string emailBody = "";
+    private bool isHtmlEmail = true;
+    private bool isSendingEmail = false;
+
+    // Toplu email
+    private string selectedGroup = "all";
+    private int bulkEmailCount = 10;
+    private string bulkEmailSubject = "";
+    private string bulkEmailBody = "";
+    private bool isSendingBulkEmail = false;
+
+    // Email geçmişi
+    private List<EmailHistory> emailHistory = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEmailHistory();
+    }
+
+    private async Task LoadEmailHistory()
+    {
+        // Simüle edilmiş email geçmişi
+        emailHistory = new List<EmailHistory>
+        {
+            new() { Date = DateTime.Now.AddHours(-2), Recipient = "user1@example.com", Subject = "Görev Hatırlatması", Success = true, Type = "Görev" },
+            new() { Date = DateTime.Now.AddHours(-4), Recipient = "user2@example.com", Subject = "Fırsat Güncellemesi", Success = true, Type = "Fırsat" },
+            new() { Date = DateTime.Now.AddHours(-6), Recipient = "user3@example.com", Subject = "Aktivite Hatırlatması", Success = false, Type = "Aktivite" },
+            new() { Date = DateTime.Now.AddDays(-1), Recipient = "user4@example.com", Subject = "Hoş Geldiniz", Success = true, Type = "Hoş Geldin" }
+        };
+    }
+
+    private async Task SendSingleEmail()
+    {
+        if (string.IsNullOrWhiteSpace(emailTo) || string.IsNullOrWhiteSpace(emailSubject))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Lütfen alıcı email ve konu alanlarını doldurun!");
+            return;
+        }
+
+        try
+        {
+            isSendingEmail = true;
+            StateHasChanged();
+
+            var success = await EmailService.SendEmailAsync(emailTo, emailToName, emailSubject, emailBody, isHtmlEmail);
+            
+            if (success)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Email başarıyla gönderildi!");
+                
+                // Formu temizle
+                emailTo = "";
+                emailToName = "";
+                emailSubject = "";
+                emailBody = "";
+                
+                // Geçmişi güncelle
+                emailHistory.Insert(0, new EmailHistory
+                {
+                    Date = DateTime.Now,
+                    Recipient = emailTo,
+                    Subject = emailSubject,
+                    Success = true,
+                    Type = "Manuel"
+                });
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Email gönderilirken hata oluştu!");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Email gönderilirken hata oluştu: {ex.Message}");
+        }
+        finally
+        {
+            isSendingEmail = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SendBulkEmail()
+    {
+        if (string.IsNullOrWhiteSpace(bulkEmailSubject))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Lütfen konu alanını doldurun!");
+            return;
+        }
+
+        try
+        {
+            isSendingBulkEmail = true;
+            StateHasChanged();
+
+            // Simüle edilmiş toplu email gönderimi
+            var recipients = GenerateBulkRecipients();
+            var success = await EmailService.SendBulkEmailAsync(recipients, bulkEmailSubject, bulkEmailBody, true);
+            
+            if (success)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Toplu email başarıyla gönderildi! ({recipients.Count} alıcı)");
+                
+                // Formu temizle
+                bulkEmailSubject = "";
+                bulkEmailBody = "";
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Toplu email gönderilirken hata oluştu!");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Toplu email gönderilirken hata oluştu: {ex.Message}");
+        }
+        finally
+        {
+            isSendingBulkEmail = false;
+            StateHasChanged();
+        }
+    }
+
+    private List<EmailRecipient> GenerateBulkRecipients()
+    {
+        var recipients = new List<EmailRecipient>();
+        
+        for (int i = 1; i <= bulkEmailCount; i++)
+        {
+            recipients.Add(new EmailRecipient
+            {
+                Email = $"user{i}@example.com",
+                Name = $"Kullanıcı {i}"
+            });
+        }
+        
+        return recipients;
+    }
+
+    private async Task LoadTemplate(string templateType)
+    {
+        switch (templateType)
+        {
+            case "gorev":
+                emailSubject = "Görev Hatırlatması";
+                emailBody = "<h3>Görev Hatırlatması</h3><p>Bu bir görev hatırlatması şablonudur.</p>";
+                break;
+            case "firsat":
+                emailSubject = "Fırsat Hatırlatması";
+                emailBody = "<h3>Fırsat Hatırlatması</h3><p>Bu bir fırsat hatırlatması şablonudur.</p>";
+                break;
+            case "aktivite":
+                emailSubject = "Aktivite Hatırlatması";
+                emailBody = "<h3>Aktivite Hatırlatması</h3><p>Bu bir aktivite hatırlatması şablonudur.</p>";
+                break;
+        }
+        
+        await JSRuntime.InvokeVoidAsync("alert", $"{templateType} şablonu yüklendi!");
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadEmailHistory();
+    }
+
+    public class EmailHistory
+    {
+        public DateTime Date { get; set; }
+        public string Recipient { get; set; } = string.Empty;
+        public string Subject { get; set; } = string.Empty;
+        public bool Success { get; set; }
+        public string Type { get; set; } = string.Empty;
+    }
+}

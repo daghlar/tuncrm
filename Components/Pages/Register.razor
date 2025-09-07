@@ -1,0 +1,320 @@
+@page "/register"
+@using TunCRM.Services
+@using TunCRM.Models
+@using System.ComponentModel.DataAnnotations
+@using TunCRM.Components.Layout
+@inject AuthService AuthService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@layout LoginLayout
+
+<PageTitle>Kayıt Ol - TunCRM</PageTitle>
+
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <h1 class="login-title">
+                <i class="fas fa-user-plus"></i>
+                Kayıt Ol
+            </h1>
+            <p class="login-subtitle">TunCRM hesabı oluşturun</p>
+        </div>
+
+        <div class="login-body">
+            <EditForm Model="registerModel" OnValidSubmit="HandleRegister">
+                <DataAnnotationsValidator />
+                
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        @errorMessage
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(successMessage))
+                {
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        @successMessage
+                    </div>
+                }
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Ad *</label>
+                            <InputText class="form-control" @bind-Value="registerModel.Ad" placeholder="Adınız" />
+                            <ValidationMessage For="@(() => registerModel.Ad)" />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Soyad *</label>
+                            <InputText class="form-control" @bind-Value="registerModel.Soyad" placeholder="Soyadınız" />
+                            <ValidationMessage For="@(() => registerModel.Soyad)" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email Adresi *</label>
+                    <InputText class="form-control" @bind-Value="registerModel.Email" placeholder="ornek@email.com" />
+                    <ValidationMessage For="@(() => registerModel.Email)" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Telefon</label>
+                    <InputText class="form-control" @bind-Value="registerModel.Telefon" placeholder="0555 123 45 67" />
+                    <ValidationMessage For="@(() => registerModel.Telefon)" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Şifre *</label>
+                    <InputText type="password" class="form-control" @bind-Value="registerModel.Password" placeholder="En az 6 karakter" />
+                    <ValidationMessage For="@(() => registerModel.Password)" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Şifre Tekrar *</label>
+                    <InputText type="password" class="form-control" @bind-Value="registerModel.ConfirmPassword" placeholder="Şifrenizi tekrar giriniz" />
+                    <ValidationMessage For="@(() => registerModel.ConfirmPassword)" />
+                </div>
+
+                <div class="form-group">
+                    <div class="form-check">
+                        <InputCheckbox class="form-check-input" @bind-Value="registerModel.AcceptTerms" />
+                        <label class="form-check-label">
+                            <a href="#" class="text-primary">Kullanım şartlarını</a> kabul ediyorum
+                        </label>
+                    </div>
+                    <ValidationMessage For="@(() => registerModel.AcceptTerms)" />
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100" disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                        <text>Kayıt oluşturuluyor...</text>
+                    }
+                    else
+                    {
+                        <i class="fas fa-user-plus me-2"></i>
+                        <text>Kayıt Ol</text>
+                    }
+                </button>
+            </EditForm>
+        </div>
+
+        <div class="login-footer">
+            <p class="text-muted">
+                Zaten hesabınız var mı? 
+                <a href="/login" class="text-primary">Giriş yapın</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .login-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+    }
+
+    .login-card {
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 500px;
+        overflow: hidden;
+    }
+
+    .login-header {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .login-title {
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .login-subtitle {
+        margin: 0;
+        opacity: 0.9;
+    }
+
+    .login-body {
+        padding: 2rem;
+    }
+
+    .login-footer {
+        padding: 1rem 2rem 2rem;
+        text-align: center;
+        background-color: #f8f9fa;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        border: 2px solid #e9ecef;
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.6;
+        transform: none;
+    }
+
+    .alert {
+        border-radius: 0.5rem;
+        border: none;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+    }
+</style>
+
+@code {
+    private RegisterModel registerModel = new();
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // OnInitializedAsync'de JS interop kullanılamaz, OnAfterRenderAsync'de yapılacak
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Eğer kullanıcı zaten giriş yapmışsa ana sayfaya yönlendir
+            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+            if (!string.IsNullOrEmpty(token))
+            {
+                Navigation.NavigateTo("/");
+            }
+        }
+    }
+
+    private async Task HandleRegister()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+            successMessage = string.Empty;
+            StateHasChanged();
+
+            var result = await AuthService.RegisterAsync(
+                registerModel.Ad, 
+                registerModel.Soyad, 
+                registerModel.Email, 
+                registerModel.Password, 
+                KullaniciRolu.User
+            );
+
+            if (result.Success)
+            {
+                successMessage = "Kayıt başarıyla oluşturuldu! Giriş sayfasına yönlendiriliyorsunuz...";
+                
+                // 2 saniye bekle ve login sayfasına yönlendir
+                await Task.Delay(2000);
+                Navigation.NavigateTo("/login");
+            }
+            else
+            {
+                errorMessage = result.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyiniz.";
+            Console.WriteLine($"Register error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    public class RegisterModel
+    {
+        [Required(ErrorMessage = "Ad gereklidir")]
+        [StringLength(50, ErrorMessage = "Ad en fazla 50 karakter olabilir")]
+        public string Ad { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Soyad gereklidir")]
+        [StringLength(50, ErrorMessage = "Soyad en fazla 50 karakter olabilir")]
+        public string Soyad { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email adresi gereklidir")]
+        [EmailAddress(ErrorMessage = "Geçerli bir email adresi giriniz")]
+        public string Email { get; set; } = string.Empty;
+
+        [StringLength(20, ErrorMessage = "Telefon en fazla 20 karakter olabilir")]
+        public string? Telefon { get; set; }
+
+        [Required(ErrorMessage = "Şifre gereklidir")]
+        [MinLength(6, ErrorMessage = "Şifre en az 6 karakter olmalıdır")]
+        public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Şifre tekrar gereklidir")]
+        [Compare(nameof(Password), ErrorMessage = "Şifreler eşleşmiyor")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+
+        [Range(typeof(bool), "true", "true", ErrorMessage = "Kullanım şartlarını kabul etmelisiniz")]
+        public bool AcceptTerms { get; set; } = false;
+    }
+}

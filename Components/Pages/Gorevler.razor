@@ -1,0 +1,974 @@
+@page "/gorevler"
+@using TunCRM.Services
+@using TunCRM.Models
+@inject CrmService CrmService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Görevler - TunCRM</PageTitle>
+
+<!-- Sayfa Başlığı -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="card-title">
+                    <i class="fas fa-tasks text-primary"></i>
+                    Görev Yönetimi
+                </h1>
+                <p class="text-muted mb-0">Görevlerinizi organize edin ve takip edin</p>
+            </div>
+            <div>
+                <button class="btn btn-success" @onclick="OpenAddModal">
+                    <i class="fas fa-plus"></i>
+                    Yeni Görev
+                </button>
+                <button class="btn btn-outline-secondary" @onclick="ToggleView">
+                    <i class="fas @(isKanbanView ? "fa-table" : "fa-columns")"></i>
+                    @(isKanbanView ? "Tablo Görünümü" : "Kanban Görünümü")
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- İstatistikler -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-tasks fa-2x text-primary mb-2"></i>
+                <h3 class="card-title">@gorevler.Count</h3>
+                <p class="card-text text-muted">Toplam Görev</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                <h3 class="card-title">@gecikmisGorevler.Count</h3>
+                <p class="card-text text-muted">Gecikmiş</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-calendar-day fa-2x text-info mb-2"></i>
+                <h3 class="card-title">@bugunBitecekGorevler.Count</h3>
+                <p class="card-text text-muted">Bugün Biter</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                <h3 class="card-title">@tamamlananGorevler.Count</h3>
+                <p class="card-text text-muted">Tamamlanan</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtreler -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Filtreler</h2>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="form-label">Arama</label>
+                    <input type="text" class="form-control" @bind="searchFilter" @onkeyup="OnSearchChanged" 
+                           placeholder="Görev başlığı ile ara...">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-group">
+                    <label class="form-label">Durum</label>
+                    <select class="form-control" @bind="durumFilter" @bind:after="OnFilterChanged">
+                        <option value="">Tüm Durumlar</option>
+                        <option value="1">Beklemede</option>
+                        <option value="2">Devam Ediyor</option>
+                        <option value="3">Tamamlandı</option>
+                        <option value="4">İptal Edildi</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-group">
+                    <label class="form-label">Öncelik</label>
+                    <select class="form-control" @bind="oncelikFilter" @bind:after="OnFilterChanged">
+                        <option value="">Tüm Öncelikler</option>
+                        <option value="1">Düşük</option>
+                        <option value="2">Normal</option>
+                        <option value="3">Yüksek</option>
+                        <option value="4">Kritik</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-group">
+                    <label class="form-label">Atanan</label>
+                    <select class="form-control" @bind="atananFilter" @bind:after="OnFilterChanged">
+                        <option value="">Tüm Kullanıcılar</option>
+                        @foreach (var kullanici in kullanicilar)
+                        {
+                            <option value="@kullanici.Id">@kullanici.TamAd</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-group">
+                    <label class="form-label">Firma</label>
+                    <select class="form-control" @bind="firmaFilter" @bind:after="OnFilterChanged">
+                        <option value="">Tüm Firmalar</option>
+                        @foreach (var firma in firmalar)
+                        {
+                            <option value="@firma.Id">@firma.Ad</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button class="btn btn-secondary w-100" @onclick="ClearFilters">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (isKanbanView)
+{
+    <!-- Kanban Board -->
+    <div class="kanban-board">
+        <div class="kanban-column" data-durum="1">
+            <div class="kanban-header">
+                <h3>Beklemede</h3>
+                <span class="badge bg-secondary">@GetGorevlerByDurum(1).Count()</span>
+            </div>
+            <div class="kanban-body">
+                @foreach (var gorev in GetGorevlerByDurum(1))
+                {
+                    <div class="kanban-card" @onclick="() => EditGorev(gorev)">
+                        <div class="kanban-card-header">
+                            <h5>@gorev.Baslik</h5>
+                            <span class="badge @GetOncelikBadgeClass((int)gorev.Oncelik)">
+                                @GetOncelikDisplayName((int)gorev.Oncelik)
+                            </span>
+                        </div>
+                        <div class="kanban-card-body">
+                            @if (!string.IsNullOrEmpty(gorev.Aciklama))
+                            {
+                                <p class="small">@(gorev.Aciklama.Length > 100 ? gorev.Aciklama.Substring(0, 100) + "..." : gorev.Aciklama)</p>
+                            }
+                            @if (gorev.Firma != null)
+                            {
+                                <p class="text-muted small"><i class="fas fa-building"></i> @gorev.Firma.Ad</p>
+                            }
+                            @if (gorev.AtananKullanici != null)
+                            {
+                                <p class="text-muted small"><i class="fas fa-user"></i> @gorev.AtananKullanici.TamAd</p>
+                            }
+                        </div>
+                        <div class="kanban-card-footer">
+                            @if (gorev.BitisTarihi.HasValue)
+                            {
+                                <small class="@(gorev.Gecikmis ? "text-danger" : gorev.BugunBiter ? "text-warning" : "text-muted")">
+                                    <i class="fas fa-calendar"></i> @gorev.BitisTarihi.Value.ToString("dd.MM.yyyy")
+                                </small>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="kanban-column" data-durum="2">
+            <div class="kanban-header">
+                <h3>Devam Ediyor</h3>
+                <span class="badge bg-primary">@GetGorevlerByDurum(2).Count()</span>
+            </div>
+            <div class="kanban-body">
+                @foreach (var gorev in GetGorevlerByDurum(2))
+                {
+                    <div class="kanban-card" @onclick="() => EditGorev(gorev)">
+                        <div class="kanban-card-header">
+                            <h5>@gorev.Baslik</h5>
+                            <span class="badge @GetOncelikBadgeClass((int)gorev.Oncelik)">
+                                @GetOncelikDisplayName((int)gorev.Oncelik)
+                            </span>
+                        </div>
+                        <div class="kanban-card-body">
+                            @if (!string.IsNullOrEmpty(gorev.Aciklama))
+                            {
+                                <p class="small">@(gorev.Aciklama.Length > 100 ? gorev.Aciklama.Substring(0, 100) + "..." : gorev.Aciklama)</p>
+                            }
+                            @if (gorev.Firma != null)
+                            {
+                                <p class="text-muted small"><i class="fas fa-building"></i> @gorev.Firma.Ad</p>
+                            }
+                            @if (gorev.AtananKullanici != null)
+                            {
+                                <p class="text-muted small"><i class="fas fa-user"></i> @gorev.AtananKullanici.TamAd</p>
+                            }
+                        </div>
+                        <div class="kanban-card-footer">
+                            @if (gorev.BitisTarihi.HasValue)
+                            {
+                                <small class="@(gorev.Gecikmis ? "text-danger" : gorev.BugunBiter ? "text-warning" : "text-muted")">
+                                    <i class="fas fa-calendar"></i> @gorev.BitisTarihi.Value.ToString("dd.MM.yyyy")
+                                </small>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="kanban-column" data-durum="3">
+            <div class="kanban-header">
+                <h3>Tamamlandı</h3>
+                <span class="badge bg-success">@GetGorevlerByDurum(3).Count()</span>
+            </div>
+            <div class="kanban-body">
+                @foreach (var gorev in GetGorevlerByDurum(3))
+                {
+                    <div class="kanban-card" @onclick="() => EditGorev(gorev)">
+                        <div class="kanban-card-header">
+                            <h5>@gorev.Baslik</h5>
+                            <span class="badge @GetOncelikBadgeClass((int)gorev.Oncelik)">
+                                @GetOncelikDisplayName((int)gorev.Oncelik)
+                            </span>
+                        </div>
+                        <div class="kanban-card-body">
+                            @if (!string.IsNullOrEmpty(gorev.Aciklama))
+                            {
+                                <p class="small">@(gorev.Aciklama.Length > 100 ? gorev.Aciklama.Substring(0, 100) + "..." : gorev.Aciklama)</p>
+                            }
+                            @if (gorev.Firma != null)
+                            {
+                                <p class="text-muted small"><i class="fas fa-building"></i> @gorev.Firma.Ad</p>
+                            }
+                            @if (gorev.AtananKullanici != null)
+                            {
+                                <p class="text-muted small"><i class="fas fa-user"></i> @gorev.AtananKullanici.TamAd</p>
+                            }
+                        </div>
+                        <div class="kanban-card-footer">
+                            @if (gorev.TamamlanmaTarihi.HasValue)
+                            {
+                                <small class="text-success">
+                                    <i class="fas fa-check"></i> @gorev.TamamlanmaTarihi.Value.ToString("dd.MM.yyyy")
+                                </small>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="kanban-column" data-durum="4">
+            <div class="kanban-header">
+                <h3>İptal Edildi</h3>
+                <span class="badge bg-danger">@GetGorevlerByDurum(4).Count()</span>
+            </div>
+            <div class="kanban-body">
+                @foreach (var gorev in GetGorevlerByDurum(4))
+                {
+                    <div class="kanban-card" @onclick="() => EditGorev(gorev)">
+                        <div class="kanban-card-header">
+                            <h5>@gorev.Baslik</h5>
+                            <span class="badge @GetOncelikBadgeClass((int)gorev.Oncelik)">
+                                @GetOncelikDisplayName((int)gorev.Oncelik)
+                            </span>
+                        </div>
+                        <div class="kanban-card-body">
+                            @if (!string.IsNullOrEmpty(gorev.Aciklama))
+                            {
+                                <p class="small">@(gorev.Aciklama.Length > 100 ? gorev.Aciklama.Substring(0, 100) + "..." : gorev.Aciklama)</p>
+                            }
+                            @if (gorev.Firma != null)
+                            {
+                                <p class="text-muted small"><i class="fas fa-building"></i> @gorev.Firma.Ad</p>
+                            }
+                            @if (gorev.AtananKullanici != null)
+                            {
+                                <p class="text-muted small"><i class="fas fa-user"></i> @gorev.AtananKullanici.TamAd</p>
+                            }
+                        </div>
+                        <div class="kanban-card-footer">
+                            <small class="text-muted">
+                                <i class="fas fa-times"></i> İptal Edildi
+                            </small>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Tablo Görünümü -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Görev Listesi (@filteredGorevler.Count)</h2>
+        </div>
+        <div class="card-body">
+            @if (isLoading)
+            {
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Yükleniyor...</span>
+                    </div>
+                </div>
+            }
+            else if (filteredGorevler.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Görev</th>
+                                <th>Durum</th>
+                                <th>Öncelik</th>
+                                <th>Atanan</th>
+                                <th>Firma</th>
+                                <th>Bitiş Tarihi</th>
+                                <th class="text-center">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var gorev in filteredGorevler)
+                            {
+                                <tr class="@(gorev.Gecikmis ? "table-danger" : gorev.BugunBiter ? "table-warning" : "")">
+                                    <td>
+                                        <strong>@gorev.Baslik</strong>
+                                        @if (!string.IsNullOrEmpty(gorev.Aciklama))
+                                        {
+                                            <br>
+                                            <small class="text-muted">
+                                                @(gorev.Aciklama.Length > 50 ? gorev.Aciklama.Substring(0, 50) + "..." : gorev.Aciklama)
+                                            </small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge @GetDurumBadgeClass((int)gorev.Durum)">
+                                            @GetDurumDisplayName((int)gorev.Durum)
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @GetOncelikBadgeClass((int)gorev.Oncelik)">
+                                            @GetOncelikDisplayName((int)gorev.Oncelik)
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (gorev.AtananKullanici != null)
+                                        {
+                                            <span>@gorev.AtananKullanici.TamAd</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (gorev.Firma != null)
+                                        {
+                                            <span>@gorev.Firma.Ad</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (gorev.BitisTarihi.HasValue)
+                                        {
+                                            <span class="@(gorev.Gecikmis ? "text-danger" : gorev.BugunBiter ? "text-warning" : "text-muted")">
+                                                @gorev.BitisTarihi.Value.ToString("dd.MM.yyyy")
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => EditGorev(gorev)" title="Düzenle">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteGorev(gorev.Id)" title="Sil">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Görev bulunamadı</h5>
+                    <p class="text-muted">Henüz kayıtlı görev yok veya arama kriterlerinize uygun görev bulunamadı.</p>
+                    <button class="btn btn-primary" @onclick="OpenAddModal">
+                        <i class="fas fa-plus"></i>
+                        İlk Görev Ekle
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<!-- Görev Ekleme/Düzenleme Modal -->
+@if (showModal)
+{
+    <div class="modal" style="display: block; background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-tasks"></i>
+                        @(isEditing ? "Görev Düzenle" : "Yeni Görev")
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="currentGorev" OnValidSubmit="SaveGorev">
+                        <DataAnnotationsValidator />
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label class="form-label">Görev Başlığı *</label>
+                                    <InputText class="form-control" @bind-Value="currentGorev.Baslik" />
+                                    <ValidationMessage For="@(() => currentGorev.Baslik)" />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label">Öncelik</label>
+                                    <select class="form-control" @bind="currentGorev.Oncelik">
+                                        <option value="1">Düşük</option>
+                                        <option value="2">Normal</option>
+                                        <option value="3">Yüksek</option>
+                                        <option value="4">Kritik</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Durum</label>
+                                    <select class="form-control" @bind="currentGorev.Durum">
+                                        <option value="1">Beklemede</option>
+                                        <option value="2">Devam Ediyor</option>
+                                        <option value="3">Tamamlandı</option>
+                                        <option value="4">İptal Edildi</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Atanan Kullanıcı</label>
+                                    <select class="form-control" @bind="currentGorev.AtananKullaniciId">
+                                        <option value="">Kullanıcı Seçin</option>
+                                        @foreach (var kullanici in kullanicilar)
+                                        {
+                                            <option value="@kullanici.Id">@kullanici.TamAd</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Firma</label>
+                                    <select class="form-control" @bind="currentGorev.FirmaId">
+                                        <option value="">Firma Seçin</option>
+                                        @foreach (var firma in firmalar)
+                                        {
+                                            <option value="@firma.Id">@firma.Ad</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Fırsat</label>
+                                    <select class="form-control" @bind="currentGorev.FirsatId">
+                                        <option value="">Fırsat Seçin</option>
+                                        @foreach (var firsat in firsatlar)
+                                        {
+                                            <option value="@firsat.Id">@firsat.Ad</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Başlangıç Tarihi</label>
+                                    <InputDate class="form-control" @bind-Value="currentGorev.BaslangicTarihi" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Bitiş Tarihi</label>
+                                    <InputDate class="form-control" @bind-Value="currentGorev.BitisTarihi" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label class="form-label">Açıklama</label>
+                                    <InputTextArea class="form-control" @bind-Value="currentGorev.Aciklama" rows="3" placeholder="Görev hakkında detaylar..." />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseModal">İptal</button>
+                            <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                @if (isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm"></span>
+                                    <span class="ms-2">Kaydediliyor...</span>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-save"></i>
+                                    <span class="ms-2">Kaydet</span>
+                                }
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .kanban-board {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        padding: 1rem 0;
+        min-height: 600px;
+    }
+
+    .kanban-column {
+        min-width: 300px;
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        border: 1px solid #dee2e6;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .kanban-header {
+        padding: 1rem;
+        background-color: #e9ecef;
+        border-bottom: 1px solid #dee2e6;
+        border-radius: 0.5rem 0.5rem 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .kanban-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .kanban-body {
+        flex: 1;
+        padding: 1rem;
+        min-height: 400px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .kanban-card {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .kanban-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+    }
+
+    .kanban-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.5rem;
+    }
+
+    .kanban-card-header h5 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #495057;
+        flex: 1;
+    }
+
+    .kanban-card-body {
+        margin-bottom: 0.5rem;
+    }
+
+    .kanban-card-body p {
+        margin: 0.25rem 0;
+        font-size: 0.9rem;
+    }
+
+    .kanban-card-footer {
+        border-top: 1px solid #f8f9fa;
+        padding-top: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .kanban-card-footer small {
+        color: #6c757d;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    .form-control:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .btn {
+        border-radius: 0.375rem;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+    }
+
+    .btn-success { background-color: #28a745; border-color: #28a745; }
+    .btn-primary { background-color: #007bff; border-color: #007bff; }
+    .btn-secondary { background-color: #6c757d; border-color: #6c757d; }
+    .btn-outline-primary { color: #007bff; border-color: #007bff; }
+    .btn-outline-danger { color: #dc3545; border-color: #dc3545; }
+    .btn-outline-secondary { color: #6c757d; border-color: #6c757d; }
+
+    .badge {
+        padding: 0.35em 0.65em;
+        border-radius: 0.25rem;
+        font-weight: bold;
+        color: white;
+        font-size: 0.75em;
+    }
+
+    .bg-secondary { background-color: #6c757d !important; }
+    .bg-primary { background-color: #007bff !important; }
+    .bg-success { background-color: #28a745 !important; }
+    .bg-danger { background-color: #dc3545 !important; }
+    .bg-warning { background-color: #ffc107 !important; color: #212529 !important; }
+    .bg-info { background-color: #17a2b8 !important; }
+
+    .text-success { color: #28a745 !important; }
+    .text-warning { color: #ffc107 !important; }
+    .text-danger { color: #dc3545 !important; }
+    .text-muted { color: #6c757d !important; }
+    .fw-bold { font-weight: bold !important; }
+    .small { font-size: 0.875em; }
+
+    .table-danger { background-color: rgba(220, 53, 69, 0.1) !important; }
+    .table-warning { background-color: rgba(255, 193, 7, 0.1) !important; }
+</style>
+
+@code {
+    private List<Gorev> gorevler = new();
+    private List<Gorev> filteredGorevler = new();
+    private List<Gorev> gecikmisGorevler = new();
+    private List<Gorev> bugunBitecekGorevler = new();
+    private List<Gorev> tamamlananGorevler = new();
+    private List<Kullanici> kullanicilar = new();
+    private List<Firma> firmalar = new();
+    private List<Firsat> firsatlar = new();
+    private Gorev currentGorev = new();
+    
+    private bool isLoading = true;
+    private bool showModal = false;
+    private bool isEditing = false;
+    private bool isSaving = false;
+    private bool isKanbanView = true;
+    
+    private string searchFilter = "";
+    private string durumFilter = "";
+    private string oncelikFilter = "";
+    private string atananFilter = "";
+    private string firmaFilter = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+            gorevler = await CrmService.GetGorevlerAsync();
+            gecikmisGorevler = await CrmService.GetGecikmisGorevlerAsync();
+            bugunBitecekGorevler = await CrmService.GetBugunBitecekGorevlerAsync();
+            tamamlananGorevler = gorevler.Where(g => g.Durum == GorevDurumu.Tamamlandi).ToList();
+            kullanicilar = await CrmService.GetKullanicilarAsync();
+            firmalar = await CrmService.GetFirmalarAsync();
+            firsatlar = await CrmService.GetFirsatlarAsync();
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Veriler yüklenirken hata oluştu: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        filteredGorevler = gorevler.ToList();
+
+        if (!string.IsNullOrEmpty(searchFilter))
+        {
+            filteredGorevler = filteredGorevler.Where(g => 
+                g.Baslik.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) ||
+                (g.Aciklama?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
+        }
+
+        if (!string.IsNullOrEmpty(durumFilter))
+        {
+            var durum = (GorevDurumu)int.Parse(durumFilter);
+            filteredGorevler = filteredGorevler.Where(g => g.Durum == durum).ToList();
+        }
+
+        if (!string.IsNullOrEmpty(oncelikFilter))
+        {
+            var oncelik = (GorevOnceligi)int.Parse(oncelikFilter);
+            filteredGorevler = filteredGorevler.Where(g => g.Oncelik == oncelik).ToList();
+        }
+
+        if (!string.IsNullOrEmpty(atananFilter))
+        {
+            var kullaniciId = int.Parse(atananFilter);
+            filteredGorevler = filteredGorevler.Where(g => g.AtananKullaniciId == kullaniciId).ToList();
+        }
+
+        if (!string.IsNullOrEmpty(firmaFilter))
+        {
+            var firmaId = int.Parse(firmaFilter);
+            filteredGorevler = filteredGorevler.Where(g => g.FirmaId == firmaId).ToList();
+        }
+    }
+
+    private async Task OnSearchChanged()
+    {
+        await Task.Delay(300); // Debounce
+        ApplyFilters();
+        StateHasChanged();
+    }
+
+    private void OnFilterChanged()
+    {
+        ApplyFilters();
+        StateHasChanged();
+    }
+
+    private void ClearFilters()
+    {
+        searchFilter = "";
+        durumFilter = "";
+        oncelikFilter = "";
+        atananFilter = "";
+        firmaFilter = "";
+        ApplyFilters();
+        StateHasChanged();
+    }
+
+    private void ToggleView()
+    {
+        isKanbanView = !isKanbanView;
+        StateHasChanged();
+    }
+
+    private IEnumerable<Gorev> GetGorevlerByDurum(int durum)
+    {
+        var durumEnum = (GorevDurumu)durum;
+        return filteredGorevler.Where(g => g.Durum == durumEnum);
+    }
+
+    private void OpenAddModal()
+    {
+        currentGorev = new Gorev();
+        isEditing = false;
+        showModal = true;
+    }
+
+    private void EditGorev(Gorev gorev)
+    {
+        currentGorev = new Gorev
+        {
+            Id = gorev.Id,
+            Baslik = gorev.Baslik,
+            Aciklama = gorev.Aciklama,
+            Durum = gorev.Durum,
+            Oncelik = gorev.Oncelik,
+            BaslangicTarihi = gorev.BaslangicTarihi,
+            BitisTarihi = gorev.BitisTarihi,
+            AtananKullaniciId = gorev.AtananKullaniciId,
+            FirmaId = gorev.FirmaId,
+            FirsatId = gorev.FirsatId
+        };
+        isEditing = true;
+        showModal = true;
+    }
+
+    private async Task SaveGorev()
+    {
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            if (isEditing)
+            {
+                await CrmService.UpdateGorevAsync(currentGorev);
+                await JSRuntime.InvokeVoidAsync("alert", "Görev başarıyla güncellendi!");
+            }
+            else
+            {
+                await CrmService.CreateGorevAsync(currentGorev);
+                await JSRuntime.InvokeVoidAsync("alert", "Görev başarıyla eklendi!");
+            }
+
+            CloseModal();
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteGorev(int id)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Bu görevi silmek istediğinizden emin misiniz?");
+        if (confirmed)
+        {
+            try
+            {
+                await CrmService.DeleteGorevAsync(id);
+                await JSRuntime.InvokeVoidAsync("alert", "Görev başarıyla silindi!");
+                await LoadData();
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+            }
+        }
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        currentGorev = new Gorev();
+        isEditing = false;
+    }
+
+    private string GetDurumDisplayName(int durum)
+    {
+        return durum switch
+        {
+            1 => "Beklemede",
+            2 => "Devam Ediyor",
+            3 => "Tamamlandı",
+            4 => "İptal Edildi",
+            _ => "Bilinmiyor"
+        };
+    }
+
+    private string GetDurumBadgeClass(int durum)
+    {
+        return durum switch
+        {
+            1 => "bg-secondary",
+            2 => "bg-primary",
+            3 => "bg-success",
+            4 => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetOncelikDisplayName(int oncelik)
+    {
+        return oncelik switch
+        {
+            1 => "Düşük",
+            2 => "Normal",
+            3 => "Yüksek",
+            4 => "Kritik",
+            _ => "Bilinmiyor"
+        };
+    }
+
+    private string GetOncelikBadgeClass(int oncelik)
+    {
+        return oncelik switch
+        {
+            1 => "bg-secondary",
+            2 => "bg-info",
+            3 => "bg-warning",
+            4 => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+}

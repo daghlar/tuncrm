@@ -1,0 +1,101 @@
+﻿<!-- Sidebar Header -->
+<div class="sidebar-header">
+    <h1 class="sidebar-title">
+        <i class="fas fa-chart-line"></i>
+        TunCRM
+    </h1>
+    <div class="theme-toggle">
+        <button class="btn btn-sm btn-outline-light" @onclick="ToggleTheme" title="Tema Değiştir">
+            <i class="fas fa-moon" id="theme-icon"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Navigation Menu -->
+<ul class="nav-menu">
+    <li class="nav-item">
+        <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+            <i class="fas fa-home"></i>
+            Ana Sayfa
+        </NavLink>
+    </li>
+
+    <li class="nav-item">
+        <NavLink class="nav-link" href="firmalar">
+            <i class="fas fa-building"></i>
+            Firmalar
+        </NavLink>
+    </li>
+
+    <li class="nav-item">
+        <NavLink class="nav-link" href="firsatlar">
+            <i class="fas fa-handshake"></i>
+            Fırsatlar
+        </NavLink>
+    </li>
+
+    <li class="nav-item">
+        <NavLink class="nav-link" href="aktiviteler">
+            <i class="fas fa-calendar"></i>
+            Aktiviteler
+        </NavLink>
+    </li>
+
+        <li class="nav-item">
+            <NavLink class="nav-link" href="gorevler">
+                <i class="fas fa-tasks"></i>
+                Görevler
+            </NavLink>
+        </li>
+        <li class="nav-item">
+            <NavLink class="nav-link" href="email">
+                <i class="fas fa-envelope"></i>
+                Email
+            </NavLink>
+        </li>
+
+    <li class="nav-item">
+        <NavLink class="nav-link" href="raporlar">
+            <i class="fas fa-chart-bar"></i>
+            Raporlar
+        </NavLink>
+    </li>
+
+    <li class="nav-item">
+        <NavLink class="nav-link" href="ayarlar">
+            <i class="fas fa-cog"></i>
+            Ayarlar
+        </NavLink>
+    </li>
+</ul>
+
+@inject IJSRuntime JS
+
+@code {
+    private bool isDarkMode = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // LocalStorage'dan tema tercihini oku
+            var theme = await JS.InvokeAsync<string>("localStorage.getItem", "theme");
+            if (theme == "dark")
+            {
+                isDarkMode = true;
+                await JS.InvokeVoidAsync("setTheme", "dark");
+                await JS.InvokeVoidAsync("updateThemeIcon", true);
+            }
+        }
+    }
+
+    private async Task ToggleTheme()
+    {
+        isDarkMode = !isDarkMode;
+        var theme = isDarkMode ? "dark" : "light";
+        
+        await JS.InvokeVoidAsync("setTheme", theme);
+        await JS.InvokeVoidAsync("localStorage.setItem", "theme", theme);
+        await JS.InvokeVoidAsync("updateThemeIcon", isDarkMode);
+    }
+}

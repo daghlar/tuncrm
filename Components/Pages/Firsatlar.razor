@@ -1,0 +1,931 @@
+@page "/firsatlar"
+@using TunCRM.Services
+@using TunCRM.Models
+@inject CrmService CrmService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Fırsatlar - TunCRM</PageTitle>
+
+<!-- Sayfa Başlığı -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="card-title">
+                    <i class="fas fa-handshake text-primary"></i>
+                    Fırsatlar Pipeline
+                </h1>
+                <p class="text-muted mb-0">Satış fırsatlarınızı takip edin</p>
+            </div>
+            <div>
+                <button class="btn btn-success" @onclick="OpenAddModal">
+                    <i class="fas fa-plus"></i>
+                    Yeni Fırsat
+                </button>
+                <button class="btn btn-outline-secondary" @onclick="ToggleView">
+                    <i class="fas @(isKanbanView ? "fa-table" : "fa-columns")"></i>
+                    @(isKanbanView ? "Tablo Görünümü" : "Kanban Görünümü")
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtreler -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Filtreler</h2>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="form-label">Arama</label>
+                    <input type="text" class="form-control" @bind="searchFilter" @onkeyup="OnSearchChanged" 
+                           placeholder="Fırsat adı veya firma ile ara...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="form-label">Firma</label>
+                    <select class="form-control" @bind="firmaFilter" @bind:after="OnFilterChanged">
+                        <option value="">Tüm Firmalar</option>
+                        @foreach (var firma in firmalar)
+                        {
+                            <option value="@firma.Id">@firma.Ad</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="form-label">Tutar Aralığı</label>
+                    <select class="form-control" @bind="tutarFilter" @bind:after="OnFilterChanged">
+                        <option value="">Tüm Tutarlar</option>
+                        <option value="0-10000">0 - 10.000 TL</option>
+                        <option value="10000-50000">10.000 - 50.000 TL</option>
+                        <option value="50000-100000">50.000 - 100.000 TL</option>
+                        <option value="100000+">100.000+ TL</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button class="btn btn-secondary w-100" @onclick="ClearFilters">
+                    <i class="fas fa-times"></i>
+                    Temizle
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (isKanbanView)
+{
+    <!-- Kanban Board -->
+    <div class="kanban-board">
+        <div class="kanban-column" data-stage="1">
+            <div class="kanban-header">
+                <h3>İlk İletişim</h3>
+                <span class="badge bg-secondary">@GetFirsatlarByStage(1).Count()</span>
+            </div>
+            <div class="kanban-body" @ondrop="(e) => OnDrop(e, 1)" @ondragover="OnDragOver">
+                @foreach (var firsat in GetFirsatlarByStage(1))
+                {
+                    <div class="kanban-card" draggable="true" @ondragstart="(e) => OnDragStart(e, firsat.Id)">
+                        <div class="kanban-card-header">
+                            <h5>@firsat.Ad</h5>
+                            <div class="kanban-actions">
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditFirsat(firsat)" title="Düzenle">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteFirsat(firsat.Id)" title="Sil">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="kanban-card-body">
+                            <p class="text-muted">@(firsat.Firma?.Ad ?? "Firma Yok")</p>
+                            @if (firsat.Tutar > 0)
+                            {
+                                <p class="text-success fw-bold">@firsat.Tutar.Value.ToString("C0")</p>
+                            }
+                            @if (!string.IsNullOrEmpty(firsat.Aciklama))
+                            {
+                                <p class="small">@(firsat.Aciklama.Length > 100 ? firsat.Aciklama.Substring(0, 100) + "..." : firsat.Aciklama)</p>
+                            }
+                        </div>
+                        <div class="kanban-card-footer">
+                            <small class="text-muted">@firsat.OlusturmaTarihi.ToString("dd.MM.yyyy")</small>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="kanban-column" data-stage="2">
+            <div class="kanban-header">
+                <h3>Teklif Hazırlama</h3>
+                <span class="badge bg-info">@GetFirsatlarByStage(2).Count()</span>
+            </div>
+            <div class="kanban-body" @ondrop="(e) => OnDrop(e, 2)" @ondragover="OnDragOver">
+                @foreach (var firsat in GetFirsatlarByStage(2))
+                {
+                    <div class="kanban-card" draggable="true" @ondragstart="(e) => OnDragStart(e, firsat.Id)">
+                        <div class="kanban-card-header">
+                            <h5>@firsat.Ad</h5>
+                            <div class="kanban-actions">
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditFirsat(firsat)" title="Düzenle">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteFirsat(firsat.Id)" title="Sil">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="kanban-card-body">
+                            <p class="text-muted">@(firsat.Firma?.Ad ?? "Firma Yok")</p>
+                            @if (firsat.Tutar > 0)
+                            {
+                                <p class="text-success fw-bold">@firsat.Tutar.Value.ToString("C0")</p>
+                            }
+                            @if (!string.IsNullOrEmpty(firsat.Aciklama))
+                            {
+                                <p class="small">@(firsat.Aciklama.Length > 100 ? firsat.Aciklama.Substring(0, 100) + "..." : firsat.Aciklama)</p>
+                            }
+                        </div>
+                        <div class="kanban-card-footer">
+                            <small class="text-muted">@firsat.OlusturmaTarihi.ToString("dd.MM.yyyy")</small>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="kanban-column" data-stage="3">
+            <div class="kanban-header">
+                <h3>Teklif Gönderildi</h3>
+                <span class="badge bg-warning">@GetFirsatlarByStage(3).Count()</span>
+            </div>
+            <div class="kanban-body" @ondrop="(e) => OnDrop(e, 3)" @ondragover="OnDragOver">
+                @foreach (var firsat in GetFirsatlarByStage(3))
+                {
+                    <div class="kanban-card" draggable="true" @ondragstart="(e) => OnDragStart(e, firsat.Id)">
+                        <div class="kanban-card-header">
+                            <h5>@firsat.Ad</h5>
+                            <div class="kanban-actions">
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditFirsat(firsat)" title="Düzenle">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteFirsat(firsat.Id)" title="Sil">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="kanban-card-body">
+                            <p class="text-muted">@(firsat.Firma?.Ad ?? "Firma Yok")</p>
+                            @if (firsat.Tutar > 0)
+                            {
+                                <p class="text-success fw-bold">@firsat.Tutar.Value.ToString("C0")</p>
+                            }
+                            @if (!string.IsNullOrEmpty(firsat.Aciklama))
+                            {
+                                <p class="small">@(firsat.Aciklama.Length > 100 ? firsat.Aciklama.Substring(0, 100) + "..." : firsat.Aciklama)</p>
+                            }
+                        </div>
+                        <div class="kanban-card-footer">
+                            <small class="text-muted">@firsat.OlusturmaTarihi.ToString("dd.MM.yyyy")</small>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="kanban-column" data-stage="4">
+            <div class="kanban-header">
+                <h3>Müzakere</h3>
+                <span class="badge bg-primary">@GetFirsatlarByStage(4).Count()</span>
+            </div>
+            <div class="kanban-body" @ondrop="(e) => OnDrop(e, 4)" @ondragover="OnDragOver">
+                @foreach (var firsat in GetFirsatlarByStage(4))
+                {
+                    <div class="kanban-card" draggable="true" @ondragstart="(e) => OnDragStart(e, firsat.Id)">
+                        <div class="kanban-card-header">
+                            <h5>@firsat.Ad</h5>
+                            <div class="kanban-actions">
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditFirsat(firsat)" title="Düzenle">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteFirsat(firsat.Id)" title="Sil">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="kanban-card-body">
+                            <p class="text-muted">@(firsat.Firma?.Ad ?? "Firma Yok")</p>
+                            @if (firsat.Tutar > 0)
+                            {
+                                <p class="text-success fw-bold">@firsat.Tutar.Value.ToString("C0")</p>
+                            }
+                            @if (!string.IsNullOrEmpty(firsat.Aciklama))
+                            {
+                                <p class="small">@(firsat.Aciklama.Length > 100 ? firsat.Aciklama.Substring(0, 100) + "..." : firsat.Aciklama)</p>
+                            }
+                        </div>
+                        <div class="kanban-card-footer">
+                            <small class="text-muted">@firsat.OlusturmaTarihi.ToString("dd.MM.yyyy")</small>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="kanban-column" data-stage="5">
+            <div class="kanban-header">
+                <h3>Kazanıldı</h3>
+                <span class="badge bg-success">@GetFirsatlarByStage(5).Count()</span>
+            </div>
+            <div class="kanban-body" @ondrop="(e) => OnDrop(e, 5)" @ondragover="OnDragOver">
+                @foreach (var firsat in GetFirsatlarByStage(5))
+                {
+                    <div class="kanban-card" draggable="true" @ondragstart="(e) => OnDragStart(e, firsat.Id)">
+                        <div class="kanban-card-header">
+                            <h5>@firsat.Ad</h5>
+                            <div class="kanban-actions">
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditFirsat(firsat)" title="Düzenle">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteFirsat(firsat.Id)" title="Sil">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="kanban-card-body">
+                            <p class="text-muted">@(firsat.Firma?.Ad ?? "Firma Yok")</p>
+                            @if (firsat.Tutar > 0)
+                            {
+                                <p class="text-success fw-bold">@firsat.Tutar.Value.ToString("C0")</p>
+                            }
+                            @if (!string.IsNullOrEmpty(firsat.Aciklama))
+                            {
+                                <p class="small">@(firsat.Aciklama.Length > 100 ? firsat.Aciklama.Substring(0, 100) + "..." : firsat.Aciklama)</p>
+                            }
+                        </div>
+                        <div class="kanban-card-footer">
+                            <small class="text-muted">@firsat.OlusturmaTarihi.ToString("dd.MM.yyyy")</small>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="kanban-column" data-stage="6">
+            <div class="kanban-header">
+                <h3>Kaybedildi</h3>
+                <span class="badge bg-danger">@GetFirsatlarByStage(6).Count()</span>
+            </div>
+            <div class="kanban-body" @ondrop="(e) => OnDrop(e, 6)" @ondragover="OnDragOver">
+                @foreach (var firsat in GetFirsatlarByStage(6))
+                {
+                    <div class="kanban-card" draggable="true" @ondragstart="(e) => OnDragStart(e, firsat.Id)">
+                        <div class="kanban-card-header">
+                            <h5>@firsat.Ad</h5>
+                            <div class="kanban-actions">
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditFirsat(firsat)" title="Düzenle">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteFirsat(firsat.Id)" title="Sil">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="kanban-card-body">
+                            <p class="text-muted">@(firsat.Firma?.Ad ?? "Firma Yok")</p>
+                            @if (firsat.Tutar > 0)
+                            {
+                                <p class="text-success fw-bold">@firsat.Tutar.Value.ToString("C0")</p>
+                            }
+                            @if (!string.IsNullOrEmpty(firsat.Aciklama))
+                            {
+                                <p class="small">@(firsat.Aciklama.Length > 100 ? firsat.Aciklama.Substring(0, 100) + "..." : firsat.Aciklama)</p>
+                            }
+                        </div>
+                        <div class="kanban-card-footer">
+                            <small class="text-muted">@firsat.OlusturmaTarihi.ToString("dd.MM.yyyy")</small>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Tablo Görünümü -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Fırsat Listesi (@filteredFirsatlar.Count)</h2>
+        </div>
+        <div class="card-body">
+            @if (isLoading)
+            {
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Yükleniyor...</span>
+                    </div>
+                </div>
+            }
+            else if (filteredFirsatlar.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Fırsat Adı</th>
+                                <th>Firma</th>
+                                <th>Aşama</th>
+                                <th>Tutar</th>
+                                <th>Oluşturma Tarihi</th>
+                                <th class="text-center">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var firsat in filteredFirsatlar)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@firsat.Ad</strong>
+                                        @if (!string.IsNullOrEmpty(firsat.Aciklama))
+                                        {
+                                            <br>
+                                            <small class="text-muted">
+                                                @(firsat.Aciklama.Length > 50 ? firsat.Aciklama.Substring(0, 50) + "..." : firsat.Aciklama)
+                                            </small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (firsat.Firma != null)
+                                        {
+                                            <span>@firsat.Firma.Ad</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge @GetStageBadgeClass((int)firsat.Asama)">
+                                            @GetStageDisplayName((int)firsat.Asama)
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (firsat.Tutar > 0)
+                                        {
+                                            <strong class="text-success">@firsat.Tutar.Value.ToString("C0")</strong>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            @firsat.OlusturmaTarihi.ToString("dd.MM.yyyy HH:mm")
+                                        </small>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => ViewFirsat(firsat.Id)" title="Görüntüle">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-warning" @onclick="() => EditFirsat(firsat)" title="Düzenle">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteFirsat(firsat.Id)" title="Sil">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="fas fa-handshake fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Fırsat bulunamadı</h5>
+                    <p class="text-muted">Henüz kayıtlı fırsat yok veya arama kriterlerinize uygun fırsat bulunamadı.</p>
+                    <button class="btn btn-primary" @onclick="OpenAddModal">
+                        <i class="fas fa-plus"></i>
+                        İlk Fırsat Ekle
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<!-- Fırsat Ekleme/Düzenleme Modal -->
+@if (showModal)
+{
+    <div class="modal" style="display: block; background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-handshake"></i>
+                        @(isEditing ? "Fırsat Düzenle" : "Yeni Fırsat")
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="currentFirsat" OnValidSubmit="SaveFirsat">
+                        <DataAnnotationsValidator />
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label class="form-label">Fırsat Adı *</label>
+                                    <InputText class="form-control" @bind-Value="currentFirsat.Ad" />
+                                    <ValidationMessage For="@(() => currentFirsat.Ad)" />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label">Tutar</label>
+                                    <InputNumber class="form-control" @bind-Value="currentFirsat.Tutar" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Firma</label>
+                                    <select class="form-control" @bind="currentFirsat.FirmaId">
+                                        <option value="">Firma Seçin</option>
+                                        @foreach (var firma in firmalar)
+                                        {
+                                            <option value="@firma.Id">@firma.Ad</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Aşama</label>
+                                    <select class="form-control" @bind="currentFirsat.Asama">
+                                        <option value="1">İlk İletişim</option>
+                                        <option value="2">Teklif Hazırlama</option>
+                                        <option value="3">Teklif Gönderildi</option>
+                                        <option value="4">Müzakere</option>
+                                        <option value="5">Kazanıldı</option>
+                                        <option value="6">Kaybedildi</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label class="form-label">Açıklama</label>
+                                    <InputTextArea class="form-control" @bind-Value="currentFirsat.Aciklama" rows="3" placeholder="Fırsat hakkında detaylar..." />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseModal">İptal</button>
+                            <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                @if (isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm"></span>
+                                    <span class="ms-2">Kaydediliyor...</span>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-save"></i>
+                                    <span class="ms-2">Kaydet</span>
+                                }
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .kanban-board {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        padding: 1rem 0;
+        min-height: 600px;
+    }
+
+    .kanban-column {
+        min-width: 300px;
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        border: 1px solid #dee2e6;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .kanban-header {
+        padding: 1rem;
+        background-color: #e9ecef;
+        border-bottom: 1px solid #dee2e6;
+        border-radius: 0.5rem 0.5rem 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .kanban-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .kanban-body {
+        flex: 1;
+        padding: 1rem;
+        min-height: 400px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .kanban-card {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        cursor: move;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .kanban-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+    }
+
+    .kanban-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.5rem;
+    }
+
+    .kanban-card-header h5 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .kanban-actions {
+        display: flex;
+        gap: 0.25rem;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .kanban-card:hover .kanban-actions {
+        opacity: 1;
+    }
+
+    .kanban-card-body {
+        margin-bottom: 0.5rem;
+    }
+
+    .kanban-card-body p {
+        margin: 0.25rem 0;
+        font-size: 0.9rem;
+    }
+
+    .kanban-card-footer {
+        border-top: 1px solid #f8f9fa;
+        padding-top: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .kanban-card-footer small {
+        color: #6c757d;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    .form-control:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .btn {
+        border-radius: 0.375rem;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+    }
+
+    .btn-success { background-color: #28a745; border-color: #28a745; }
+    .btn-primary { background-color: #007bff; border-color: #007bff; }
+    .btn-secondary { background-color: #6c757d; border-color: #6c757d; }
+    .btn-outline-primary { color: #007bff; border-color: #007bff; }
+    .btn-outline-danger { color: #dc3545; border-color: #dc3545; }
+    .btn-outline-secondary { color: #6c757d; border-color: #6c757d; }
+
+    .badge {
+        padding: 0.35em 0.65em;
+        border-radius: 0.25rem;
+        font-weight: bold;
+        color: white;
+        font-size: 0.75em;
+    }
+
+    .bg-secondary { background-color: #6c757d !important; }
+    .bg-info { background-color: #17a2b8 !important; }
+    .bg-warning { background-color: #ffc107 !important; color: #212529 !important; }
+    .bg-primary { background-color: #007bff !important; }
+    .bg-success { background-color: #28a745 !important; }
+    .bg-danger { background-color: #dc3545 !important; }
+
+    .text-success { color: #28a745 !important; }
+    .text-muted { color: #6c757d !important; }
+    .fw-bold { font-weight: bold !important; }
+    .small { font-size: 0.875em; }
+</style>
+
+@code {
+    private List<Firsat> firsatlar = new();
+    private List<Firsat> filteredFirsatlar = new();
+    private List<Firma> firmalar = new();
+    private Firsat currentFirsat = new();
+    
+    private bool isLoading = true;
+    private bool showModal = false;
+    private bool isEditing = false;
+    private bool isSaving = false;
+    private bool isKanbanView = true;
+    
+    private string searchFilter = "";
+    private string firmaFilter = "";
+    private string tutarFilter = "";
+    private int draggedFirsatId = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+            firsatlar = await CrmService.GetFirsatlarAsync();
+            firmalar = await CrmService.GetFirmalarAsync();
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Veriler yüklenirken hata oluştu: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        filteredFirsatlar = firsatlar.ToList();
+
+        if (!string.IsNullOrEmpty(searchFilter))
+        {
+            filteredFirsatlar = filteredFirsatlar.Where(f => 
+                f.Ad.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) ||
+                (f.Firma?.Ad.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
+        }
+
+        if (!string.IsNullOrEmpty(firmaFilter))
+        {
+            var firmaId = int.Parse(firmaFilter);
+            filteredFirsatlar = filteredFirsatlar.Where(f => f.FirmaId == firmaId).ToList();
+        }
+
+        if (!string.IsNullOrEmpty(tutarFilter))
+        {
+            filteredFirsatlar = tutarFilter switch
+            {
+                "0-10000" => filteredFirsatlar.Where(f => f.Tutar >= 0 && f.Tutar <= 10000).ToList(),
+                "10000-50000" => filteredFirsatlar.Where(f => f.Tutar > 10000 && f.Tutar <= 50000).ToList(),
+                "50000-100000" => filteredFirsatlar.Where(f => f.Tutar > 50000 && f.Tutar <= 100000).ToList(),
+                "100000+" => filteredFirsatlar.Where(f => f.Tutar > 100000).ToList(),
+                _ => filteredFirsatlar
+            };
+        }
+    }
+
+    private async Task OnSearchChanged()
+    {
+        await Task.Delay(300); // Debounce
+        ApplyFilters();
+        StateHasChanged();
+    }
+
+    private void OnFilterChanged()
+    {
+        ApplyFilters();
+        StateHasChanged();
+    }
+
+    private void ClearFilters()
+    {
+        searchFilter = "";
+        firmaFilter = "";
+        tutarFilter = "";
+        ApplyFilters();
+        StateHasChanged();
+    }
+
+    private void ToggleView()
+    {
+        isKanbanView = !isKanbanView;
+        StateHasChanged();
+    }
+
+    private IEnumerable<Firsat> GetFirsatlarByStage(int stage)
+    {
+        var stageEnum = (FirsatAsamasi)stage;
+        return filteredFirsatlar.Where(f => f.Asama == stageEnum);
+    }
+
+    private void OnDragStart(DragEventArgs e, int firsatId)
+    {
+        draggedFirsatId = firsatId;
+        e.DataTransfer.EffectAllowed = "move";
+    }
+
+    private void OnDragOver(DragEventArgs e)
+    {
+        // Blazor'da PreventDefault otomatik olarak yapılır
+    }
+
+    private async Task OnDrop(DragEventArgs e, int newStage)
+    {
+        // Blazor'da PreventDefault otomatik olarak yapılır
+        
+        if (draggedFirsatId > 0)
+        {
+            try
+            {
+                var firsat = firsatlar.FirstOrDefault(f => f.Id == draggedFirsatId);
+                if (firsat != null)
+                {
+                    firsat.Asama = (FirsatAsamasi)newStage;
+                    await CrmService.UpdateFirsatAsync(firsat);
+                    await LoadData();
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Aşama güncellenirken hata oluştu: {ex.Message}");
+            }
+        }
+        
+        draggedFirsatId = 0;
+    }
+
+    private void OpenAddModal()
+    {
+        currentFirsat = new Firsat();
+        isEditing = false;
+        showModal = true;
+    }
+
+    private void EditFirsat(Firsat firsat)
+    {
+        currentFirsat = new Firsat
+        {
+            Id = firsat.Id,
+            Ad = firsat.Ad,
+            Aciklama = firsat.Aciklama,
+            Tutar = firsat.Tutar,
+            Asama = firsat.Asama,
+            FirmaId = firsat.FirmaId
+        };
+        isEditing = true;
+        showModal = true;
+    }
+
+    private void ViewFirsat(int id)
+    {
+        // Fırsat detay sayfasına yönlendir
+        JSRuntime.InvokeVoidAsync("window.open", $"/firsat/{id}", "_blank");
+    }
+
+    private async Task SaveFirsat()
+    {
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            if (isEditing)
+            {
+                await CrmService.UpdateFirsatAsync(currentFirsat);
+                await JSRuntime.InvokeVoidAsync("alert", "Fırsat başarıyla güncellendi!");
+            }
+            else
+            {
+                await CrmService.CreateFirsatAsync(currentFirsat);
+                await JSRuntime.InvokeVoidAsync("alert", "Fırsat başarıyla eklendi!");
+            }
+
+            CloseModal();
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteFirsat(int id)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Bu fırsatı silmek istediğinizden emin misiniz?");
+        if (confirmed)
+        {
+            try
+            {
+                await CrmService.DeleteFirsatAsync(id);
+                await JSRuntime.InvokeVoidAsync("alert", "Fırsat başarıyla silindi!");
+                await LoadData();
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+            }
+        }
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        currentFirsat = new Firsat();
+        isEditing = false;
+    }
+
+    private string GetStageDisplayName(int asama)
+    {
+        return asama switch
+        {
+            1 => "İlk İletişim",
+            2 => "Teklif Hazırlama",
+            3 => "Teklif Gönderildi",
+            4 => "Müzakere",
+            5 => "Kazanıldı",
+            6 => "Kaybedildi",
+            _ => "Bilinmiyor"
+        };
+    }
+
+    private string GetStageBadgeClass(int asama)
+    {
+        return asama switch
+        {
+            1 => "bg-secondary",
+            2 => "bg-info",
+            3 => "bg-warning",
+            4 => "bg-primary",
+            5 => "bg-success",
+            6 => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+}

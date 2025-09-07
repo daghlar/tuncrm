@@ -1,0 +1,497 @@
+@page "/aktiviteler"
+@using TunCRM.Services
+@using TunCRM.Models
+@inject CrmService CrmService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Aktiviteler - TunCRM</PageTitle>
+
+<!-- Sayfa Başlığı -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="card-title">
+                    <i class="fas fa-calendar text-primary"></i>
+                    Aktiviteler
+                </h1>
+                <p class="text-muted mb-0">Müşteri aktivitelerini yönetin</p>
+            </div>
+            <div>
+                <button class="btn btn-success" @onclick="OpenAddModal">
+                    <i class="fas fa-plus"></i>
+                    Yeni Aktivite
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtreler -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Filtreler</h2>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="form-label">Arama</label>
+                    <input type="text" class="form-control" @bind="searchFilter" @onkeyup="OnSearchChanged" 
+                           placeholder="Aktivite başlığı ile ara...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="form-label">Tip</label>
+                    <select class="form-control" @bind="typeFilter" @bind:after="OnFilterChanged">
+                        <option value="">Tüm Tipler</option>
+                        <option value="1">Telefon</option>
+                        <option value="2">Email</option>
+                        <option value="3">Toplantı</option>
+                        <option value="4">Not</option>
+                        <option value="5">Görev</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="form-label">Firma</label>
+                    <select class="form-control" @bind="firmaFilter" @bind:after="OnFilterChanged">
+                        <option value="">Tüm Firmalar</option>
+                        @foreach (var firma in firmalar)
+                        {
+                            <option value="@firma.Id">@firma.Ad</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="form-label">Tarih Aralığı</label>
+                    <select class="form-control" @bind="dateFilter" @bind:after="OnFilterChanged">
+                        <option value="">Tüm Tarihler</option>
+                        <option value="today">Bugün</option>
+                        <option value="week">Bu Hafta</option>
+                        <option value="month">Bu Ay</option>
+                        <option value="year">Bu Yıl</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-12">
+                <button class="btn btn-secondary" @onclick="ClearFilters">
+                    <i class="fas fa-times"></i>
+                    Filtreleri Temizle
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Aktiviteler Tablosu -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Aktivite Listesi (@filteredAktiviteler.Count)</h2>
+    </div>
+    <div class="card-body">
+        @if (isLoading)
+        {
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Yükleniyor...</span>
+                </div>
+            </div>
+        }
+        else if (filteredAktiviteler.Any())
+        {
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Başlık</th>
+                            <th>Tip</th>
+                            <th>Firma</th>
+                            <th>Açıklama</th>
+                            <th class="text-center">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var aktivite in filteredAktiviteler)
+                        {
+                            <tr>
+                                <td>
+                                    <div>
+                                        <strong>@aktivite.Tarih.ToString("dd.MM.yyyy")</strong>
+                                        <br>
+                                        <small class="text-muted">@aktivite.Tarih.ToString("HH:mm")</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong>@aktivite.Baslik</strong>
+                                </td>
+                                <td>
+                                    <span class="badge @GetTypeBadgeClass(aktivite.Tip)">
+                                        @GetTypeDisplayName(aktivite.Tip)
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (aktivite.Firma != null)
+                                    {
+                                        <span>@aktivite.Firma.Ad</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(aktivite.Aciklama))
+                                    {
+                                        <span title="@aktivite.Aciklama">
+                                            @(aktivite.Aciklama.Length > 50 ? aktivite.Aciklama.Substring(0, 50) + "..." : aktivite.Aciklama)
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-outline-primary" @onclick="() => ViewAktivite(aktivite.Id)" title="Görüntüle">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-warning" @onclick="() => EditAktivite(aktivite)" title="Düzenle">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteAktivite(aktivite.Id)" title="Sil">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="fas fa-calendar fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Aktivite bulunamadı</h5>
+                <p class="text-muted">Henüz kayıtlı aktivite yok veya arama kriterlerinize uygun aktivite bulunamadı.</p>
+                <button class="btn btn-primary" @onclick="OpenAddModal">
+                    <i class="fas fa-plus"></i>
+                    İlk Aktivite Ekle
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Aktivite Ekleme/Düzenleme Modal -->
+@if (showModal)
+{
+    <div class="modal" style="display: block; background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-calendar"></i>
+                        @(isEditing ? "Aktivite Düzenle" : "Yeni Aktivite")
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="currentAktivite" OnValidSubmit="SaveAktivite">
+                        <DataAnnotationsValidator />
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label class="form-label">Başlık *</label>
+                                    <InputText class="form-control" @bind-Value="currentAktivite.Baslik" />
+                                    <ValidationMessage For="@(() => currentAktivite.Baslik)" />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label">Tip</label>
+                                    <select class="form-control" @bind="currentAktivite.Tip">
+                                        <option value="1">Telefon</option>
+                                        <option value="2">Email</option>
+                                        <option value="3">Toplantı</option>
+                                        <option value="4">Not</option>
+                                        <option value="5">Görev</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Tarih</label>
+                                    <InputDate class="form-control" @bind-Value="currentAktivite.Tarih" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Firma</label>
+                                    <select class="form-control" @bind="currentAktivite.FirmaId">
+                                        <option value="">Firma Seçin</option>
+                                        @foreach (var firma in firmalar)
+                                        {
+                                            <option value="@firma.Id">@firma.Ad</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label class="form-label">Açıklama</label>
+                                    <InputTextArea class="form-control" @bind-Value="currentAktivite.Aciklama" rows="4" placeholder="Aktivite detayları..." />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseModal">İptal</button>
+                            <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                @if (isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm"></span>
+                                    <span class="ms-2">Kaydediliyor...</span>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-save"></i>
+                                    <span class="ms-2">Kaydet</span>
+                                }
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Aktivite> aktiviteler = new();
+    private List<Aktivite> filteredAktiviteler = new();
+    private List<Firma> firmalar = new();
+    private Aktivite currentAktivite = new();
+    
+    private bool isLoading = true;
+    private bool showModal = false;
+    private bool isEditing = false;
+    private bool isSaving = false;
+    
+    private string searchFilter = "";
+    private string typeFilter = "";
+    private string firmaFilter = "";
+    private string dateFilter = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+            aktiviteler = await CrmService.GetAktivitelerAsync();
+            firmalar = await CrmService.GetFirmalarAsync();
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Veriler yüklenirken hata oluştu: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        filteredAktiviteler = aktiviteler.ToList();
+
+        if (!string.IsNullOrEmpty(searchFilter))
+        {
+            filteredAktiviteler = filteredAktiviteler.Where(a => 
+                a.Baslik.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
+        if (!string.IsNullOrEmpty(typeFilter))
+        {
+            var type = (AktiviteTipi)int.Parse(typeFilter);
+            filteredAktiviteler = filteredAktiviteler.Where(a => a.Tip == type).ToList();
+        }
+
+        if (!string.IsNullOrEmpty(firmaFilter))
+        {
+            var firmaId = int.Parse(firmaFilter);
+            filteredAktiviteler = filteredAktiviteler.Where(a => a.FirmaId == firmaId).ToList();
+        }
+
+        if (!string.IsNullOrEmpty(dateFilter))
+        {
+            var now = DateTime.Now;
+            filteredAktiviteler = dateFilter switch
+            {
+                "today" => filteredAktiviteler.Where(a => a.Tarih.Date == now.Date).ToList(),
+                "week" => filteredAktiviteler.Where(a => a.Tarih >= now.AddDays(-7)).ToList(),
+                "month" => filteredAktiviteler.Where(a => a.Tarih.Month == now.Month && a.Tarih.Year == now.Year).ToList(),
+                "year" => filteredAktiviteler.Where(a => a.Tarih.Year == now.Year).ToList(),
+                _ => filteredAktiviteler
+            };
+        }
+
+        filteredAktiviteler = filteredAktiviteler.OrderByDescending(a => a.Tarih).ToList();
+    }
+
+    private async Task OnSearchChanged()
+    {
+        await Task.Delay(300); // Debounce
+        ApplyFilters();
+        StateHasChanged();
+    }
+
+    private void OnFilterChanged()
+    {
+        ApplyFilters();
+        StateHasChanged();
+    }
+
+    private void ClearFilters()
+    {
+        searchFilter = "";
+        typeFilter = "";
+        firmaFilter = "";
+        dateFilter = "";
+        ApplyFilters();
+        StateHasChanged();
+    }
+
+    private void OpenAddModal()
+    {
+        currentAktivite = new Aktivite { Tarih = DateTime.Now };
+        isEditing = false;
+        showModal = true;
+    }
+
+    private void EditAktivite(Aktivite aktivite)
+    {
+        currentAktivite = new Aktivite
+        {
+            Id = aktivite.Id,
+            Baslik = aktivite.Baslik,
+            Aciklama = aktivite.Aciklama,
+            Tip = aktivite.Tip,
+            Tarih = aktivite.Tarih,
+            FirmaId = aktivite.FirmaId
+        };
+        isEditing = true;
+        showModal = true;
+    }
+
+    private void ViewAktivite(int id)
+    {
+        // Aktivite detay sayfasına yönlendir
+        JSRuntime.InvokeVoidAsync("window.open", $"/aktivite/{id}", "_blank");
+    }
+
+    private async Task SaveAktivite()
+    {
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            if (isEditing)
+            {
+                await CrmService.UpdateAktiviteAsync(currentAktivite);
+                await JSRuntime.InvokeVoidAsync("alert", "Aktivite başarıyla güncellendi!");
+            }
+            else
+            {
+                await CrmService.CreateAktiviteAsync(currentAktivite);
+                await JSRuntime.InvokeVoidAsync("alert", "Aktivite başarıyla eklendi!");
+            }
+
+            CloseModal();
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteAktivite(int id)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Bu aktiviteyi silmek istediğinizden emin misiniz?");
+        if (confirmed)
+        {
+            try
+            {
+                await CrmService.DeleteAktiviteAsync(id);
+                await JSRuntime.InvokeVoidAsync("alert", "Aktivite başarıyla silindi!");
+                await LoadData();
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+            }
+        }
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        currentAktivite = new Aktivite();
+        isEditing = false;
+    }
+
+    private string GetTypeDisplayName(AktiviteTipi tip)
+    {
+        return tip switch
+        {
+            AktiviteTipi.Telefon => "Telefon",
+            AktiviteTipi.Email => "Email",
+            AktiviteTipi.Toplanti => "Toplantı",
+            AktiviteTipi.Not => "Not",
+            AktiviteTipi.Gorev => "Görev",
+            _ => tip.ToString()
+        };
+    }
+
+    private string GetTypeBadgeClass(AktiviteTipi tip)
+    {
+        return tip switch
+        {
+            AktiviteTipi.Telefon => "bg-success",
+            AktiviteTipi.Email => "bg-primary",
+            AktiviteTipi.Toplanti => "bg-warning",
+            AktiviteTipi.Not => "bg-info",
+            AktiviteTipi.Gorev => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
+}
+
+

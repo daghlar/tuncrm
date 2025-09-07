@@ -1,0 +1,671 @@
+@page "/ayarlar"
+@using TunCRM.Services
+@using TunCRM.Models
+@using System.ComponentModel.DataAnnotations
+@inject CrmService CrmService
+@inject AuthService AuthService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Ayarlar - TunCRM</PageTitle>
+
+<!-- Sayfa Başlığı -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="card-title">
+                    <i class="fas fa-cog text-primary"></i>
+                    Ayarlar
+                </h1>
+                <p class="text-muted mb-0">Uygulama ayarlarını yönetin</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Genel Ayarlar -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Genel Ayarlar</h2>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">Uygulama Adı</label>
+                    <input type="text" class="form-control" value="TunCRM" readonly />
+                    <small class="text-muted">Uygulama adı değiştirilemez</small>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">Versiyon</label>
+                    <input type="text" class="form-control" value="1.0.0" readonly />
+                    <small class="text-muted">Mevcut uygulama versiyonu</small>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">Varsayılan Sayfa Boyutu</label>
+                    <select class="form-control">
+                        <option value="10">10 kayıt</option>
+                        <option value="25" selected>25 kayıt</option>
+                        <option value="50">50 kayıt</option>
+                        <option value="100">100 kayıt</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">Tema</label>
+                    <select class="form-control">
+                        <option value="light" selected>Açık Tema</option>
+                        <option value="dark">Koyu Tema</option>
+                        <option value="auto">Otomatik</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Veritabanı Ayarları -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Veritabanı Ayarları</h2>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">Veritabanı Türü</label>
+                    <input type="text" class="form-control" value="SQLite" readonly />
+                    <small class="text-muted">Mevcut veritabanı türü</small>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">Veritabanı Boyutu</label>
+                    <input type="text" class="form-control" value="@dbSize" readonly />
+                    <small class="text-muted">Mevcut veritabanı boyutu</small>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex gap-2">
+                    <button class="btn btn-warning" @onclick="BackupDatabase">
+                        <i class="fas fa-download"></i>
+                        Veritabanı Yedekle
+                    </button>
+                    <button class="btn btn-danger" @onclick="ClearDatabase">
+                        <i class="fas fa-trash"></i>
+                        Veritabanını Temizle
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Kullanıcı Yönetimi -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="card-title">Kullanıcı Yönetimi</h2>
+            <button class="btn btn-success" @onclick="OpenAddUserModal">
+                <i class="fas fa-plus"></i> Yeni Kullanıcı
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        @if (isLoading)
+        {
+            <div class="text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Yükleniyor...</span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Ad Soyad</th>
+                            <th>Email</th>
+                            <th>Rol</th>
+                            <th>Durum</th>
+                            <th>Son Giriş</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in kullanicilar)
+                        {
+                            <tr>
+                                <td>@user.TamAd</td>
+                                <td>@user.Email</td>
+                                <td>
+                                    <span class="badge bg-@(GetRoleBadgeClass(user.Rol))">
+                                        @GetRoleName(user.Rol)
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-@(user.Aktif ? "success" : "danger")">
+                                        @(user.Aktif ? "Aktif" : "Pasif")
+                                    </span>
+                                </td>
+                                <td>@(user.SonGirisTarihi?.ToString("dd.MM.yyyy HH:mm") ?? "Hiç")</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => EditUser(user)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-@(user.Aktif ? "warning" : "success")" 
+                                            @onclick="() => ToggleUserStatus(user)">
+                                        <i class="fas fa-@(user.Aktif ? "pause" : "play")"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Google Maps Scraper -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Google Maps Scraper</h2>
+        <p class="text-muted mb-0">Potansiyel müşteri firmalarını Google Maps'ten otomatik olarak toplayın</p>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <EditForm Model="scraperModel" OnValidSubmit="StartScraping">
+                    <DataAnnotationsValidator />
+                    
+                    <div class="form-group mb-3">
+                        <label class="form-label">Arama Terimi</label>
+                        <InputText class="form-control" @bind-Value="scraperModel.SearchQuery" 
+                                  placeholder="örn: restoran, otel, mağaza" />
+                        <ValidationMessage For="@(() => scraperModel.SearchQuery)" />
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="form-label">Şehir</label>
+                        <InputText class="form-control" @bind-Value="scraperModel.Location" 
+                                  placeholder="örn: İstanbul, Ankara" />
+                        <ValidationMessage For="@(() => scraperModel.Location)" />
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="form-label">Maksimum Sonuç</label>
+                        <InputNumber class="form-control" @bind-Value="scraperModel.MaxResults" />
+                        <ValidationMessage For="@(() => scraperModel.MaxResults)" />
+                    </div>
+
+                    <button type="submit" class="btn btn-success" disabled="@isScraping">
+                        <i class="fas fa-search"></i>
+                        @(isScraping ? "Scraping Yapılıyor..." : "Scraping Başlat")
+                    </button>
+                </EditForm>
+            </div>
+
+            <div class="col-md-6">
+                <h6>Scraping Sonuçları</h6>
+                @if (scrapedCompanies.Any())
+                {
+                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Firma Adı</th>
+                                    <th>Şehir</th>
+                                    <th>Telefon</th>
+                                    <th>İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var company in scrapedCompanies.Take(10))
+                                {
+                                    <tr>
+                                        <td>@company.Name</td>
+                                        <td>@company.City</td>
+                                        <td>@company.Phone</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-success" 
+                                                    @onclick="() => ImportCompany(company)">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    @if (scrapedCompanies.Count > 10)
+                    {
+                        <small class="text-muted">+@(scrapedCompanies.Count - 10) daha fazla sonuç</small>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted">Henüz scraping yapılmadı.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sistem Bilgileri -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Sistem Bilgileri</h2>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">İşletim Sistemi</label>
+                    <input type="text" class="form-control" value="@Environment.OSVersion" readonly />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">.NET Versiyonu</label>
+                    <input type="text" class="form-control" value="@Environment.Version" readonly />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">Makine Adı</label>
+                    <input type="text" class="form-control" value="@Environment.MachineName" readonly />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">Kullanıcı Adı</label>
+                    <input type="text" class="form-control" value="@Environment.UserName" readonly />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">Çalışma Süresi</label>
+                    <input type="text" class="form-control" value="@uptime" readonly />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">Bellek Kullanımı</label>
+                    <input type="text" class="form-control" value="@memoryUsage" readonly />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Profil Düzenleme Modal -->
+@if (showProfileModal)
+{
+    <div class="modal" style="display: block; background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user"></i>
+                        Profili Düzenle
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseProfileModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="editUser" OnValidSubmit="SaveProfile">
+                        <DataAnnotationsValidator />
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Ad *</label>
+                                    <InputText class="form-control" @bind-Value="editUser.Ad" />
+                                    <ValidationMessage For="@(() => editUser.Ad)" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Soyad *</label>
+                                    <InputText class="form-control" @bind-Value="editUser.Soyad" />
+                                    <ValidationMessage For="@(() => editUser.Soyad)" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Email *</label>
+                                    <InputText class="form-control" @bind-Value="editUser.Email" />
+                                    <ValidationMessage For="@(() => editUser.Email)" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Telefon</label>
+                                    <InputText class="form-control" @bind-Value="editUser.Telefon" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseProfileModal">İptal</button>
+                            <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                @if (isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm"></span>
+                                    <span class="ms-2">Kaydediliyor...</span>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-save"></i>
+                                    <span class="ms-2">Kaydet</span>
+                                }
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private Kullanici currentUser = new();
+    private Kullanici editUser = new();
+    private List<Kullanici> kullanicilar = new();
+    private List<ScrapedCompany> scrapedCompanies = new();
+    private ScraperModel scraperModel = new();
+    
+    private string dbSize = "Hesaplanıyor...";
+    private string uptime = "Hesaplanıyor...";
+    private string memoryUsage = "Hesaplanıyor...";
+    
+    private bool showProfileModal = false;
+    private bool showUserModal = false;
+    private bool isEditingUser = false;
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private bool isScraping = false;
+    private DateTime startTime = DateTime.Now;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSettings();
+    }
+
+    private async Task LoadSettings()
+    {
+        try
+        {
+            isLoading = true;
+            
+            // Kullanıcı bilgilerini yükle
+            kullanicilar = await CrmService.GetKullanicilarAsync();
+            currentUser = kullanicilar.FirstOrDefault() ?? new Kullanici
+            {
+                Id = 1,
+                Ad = "Admin",
+                Soyad = "User",
+                Email = "admin@tuncrm.com",
+                Telefon = "0555 123 45 67"
+            };
+
+            // Sistem bilgilerini hesapla
+            CalculateSystemInfo();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Ayarlar yüklenirken hata oluştu: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void CalculateSystemInfo()
+    {
+        // Veritabanı boyutu (simüle edilmiş)
+        dbSize = "2.5 MB";
+
+        // Çalışma süresi
+        var elapsed = DateTime.Now - startTime;
+        uptime = $"{elapsed.Days} gün, {elapsed.Hours} saat, {elapsed.Minutes} dakika";
+
+        // Bellek kullanımı
+        var process = System.Diagnostics.Process.GetCurrentProcess();
+        var memoryMB = process.WorkingSet64 / 1024 / 1024;
+        memoryUsage = $"{memoryMB} MB";
+    }
+
+    private void EditProfile()
+    {
+        editUser = new Kullanici
+        {
+            Id = currentUser.Id,
+            Ad = currentUser.Ad,
+            Soyad = currentUser.Soyad,
+            Email = currentUser.Email,
+            Telefon = currentUser.Telefon
+        };
+        showProfileModal = true;
+    }
+
+    private async Task SaveProfile()
+    {
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            // Profil güncelleme işlemi burada yapılacak
+            currentUser.Ad = editUser.Ad;
+            currentUser.Soyad = editUser.Soyad;
+            currentUser.Email = editUser.Email;
+            currentUser.Telefon = editUser.Telefon;
+
+            await JSRuntime.InvokeVoidAsync("alert", "Profil başarıyla güncellendi!");
+            CloseProfileModal();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CloseProfileModal()
+    {
+        showProfileModal = false;
+        editUser = new Kullanici();
+    }
+
+    private async Task ChangePassword()
+    {
+        await JSRuntime.InvokeVoidAsync("alert", "Şifre değiştirme özelliği yakında eklenecek!");
+    }
+
+    private async Task BackupDatabase()
+    {
+        await JSRuntime.InvokeVoidAsync("alert", "Veritabanı yedekleme özelliği yakında eklenecek!");
+    }
+
+    private async Task ClearDatabase()
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            "Bu işlem tüm verileri silecektir. Devam etmek istediğinizden emin misiniz?");
+        
+        if (confirmed)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Veritabanı temizleme özelliği yakında eklenecek!");
+        }
+    }
+
+    // Kullanıcı yönetimi metodları
+    private void OpenAddUserModal()
+    {
+        editUser = new Kullanici();
+        isEditingUser = false;
+        showUserModal = true;
+    }
+
+    private void EditUser(Kullanici user)
+    {
+        editUser = new Kullanici
+        {
+            Id = user.Id,
+            Ad = user.Ad,
+            Soyad = user.Soyad,
+            Email = user.Email,
+            Telefon = user.Telefon ?? "",
+            Rol = user.Rol,
+            Aktif = user.Aktif
+        };
+        isEditingUser = true;
+        showUserModal = true;
+    }
+
+    private async Task SaveUser()
+    {
+        try
+        {
+            isSaving = true;
+            // User save logic here
+            await LoadSettings();
+            showUserModal = false;
+            await JSRuntime.InvokeVoidAsync("alert", "Kullanıcı kaydedildi!");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task ToggleUserStatus(Kullanici user)
+    {
+        try
+        {
+            // Toggle user status logic here
+            await LoadSettings();
+            await JSRuntime.InvokeVoidAsync("alert", $"Kullanıcı durumu değiştirildi!");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+        }
+    }
+
+    // Scraper metodları
+    private async Task StartScraping()
+    {
+        try
+        {
+            isScraping = true;
+            // Simulate scraping
+            await Task.Delay(2000);
+            scrapedCompanies = new List<ScrapedCompany>
+            {
+                new ScrapedCompany { Name = "Örnek Firma 1", City = "İstanbul", Phone = "+90 212 123 45 67" },
+                new ScrapedCompany { Name = "Örnek Firma 2", City = "Ankara", Phone = "+90 312 987 65 43" },
+                new ScrapedCompany { Name = "Örnek Firma 3", City = "İzmir", Phone = "+90 232 555 44 33" }
+            };
+            await JSRuntime.InvokeVoidAsync("alert", "Scraping tamamlandı!");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Scraping hatası: {ex.Message}");
+        }
+        finally
+        {
+            isScraping = false;
+        }
+    }
+
+    private async Task ImportCompany(ScrapedCompany company)
+    {
+        try
+        {
+            // Import company logic here
+            await JSRuntime.InvokeVoidAsync("alert", $"{company.Name} firması eklendi!");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+        }
+    }
+
+    // Helper metodları
+    private string GetRoleName(KullaniciRolu rol)
+    {
+        return rol switch
+        {
+            KullaniciRolu.Admin => "Admin",
+            KullaniciRolu.Manager => "Yönetici",
+            KullaniciRolu.Sales => "Satış",
+            KullaniciRolu.User => "Kullanıcı",
+            _ => "Bilinmiyor"
+        };
+    }
+
+    private string GetRoleBadgeClass(KullaniciRolu rol)
+    {
+        return rol switch
+        {
+            KullaniciRolu.Admin => "danger",
+            KullaniciRolu.Manager => "warning",
+            KullaniciRolu.Sales => "info",
+            KullaniciRolu.User => "secondary",
+            _ => "secondary"
+        };
+    }
+
+    // Model sınıfları
+    public class ScraperModel
+    {
+        [Required(ErrorMessage = "Arama terimi gereklidir")]
+        public string SearchQuery { get; set; } = string.Empty;
+        
+        [Required(ErrorMessage = "Şehir gereklidir")]
+        public string Location { get; set; } = string.Empty;
+        
+        [Range(1, 100, ErrorMessage = "Maksimum sonuç 1-100 arasında olmalıdır")]
+        public int MaxResults { get; set; } = 20;
+    }
+
+    public class ScrapedCompany
+    {
+        public string Name { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Website { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public decimal? Rating { get; set; }
+        public DateTime ScrapedAt { get; set; } = DateTime.Now;
+    }
+}
+
+

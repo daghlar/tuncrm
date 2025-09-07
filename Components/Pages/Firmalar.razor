@@ -1,0 +1,506 @@
+@page "/firmalar"
+@using TunCRM.Services
+@using TunCRM.Models
+@inject CrmService CrmService
+@inject ExcelExportService ExcelExportService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Firmalar - TunCRM</PageTitle>
+
+<!-- Sayfa Başlığı -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="card-title">
+                    <i class="fas fa-building text-primary"></i>
+                    Firmalar
+                </h1>
+                <p class="text-muted mb-0">Müşteri firmalarını yönetin</p>
+            </div>
+            <div>
+                <button class="btn btn-success me-2" @onclick="OpenAddModal">
+                    <i class="fas fa-plus"></i>
+                    Yeni Firma
+                </button>
+                <button class="btn btn-secondary" @onclick="ExportToExcel">
+                    <i class="fas fa-file-excel"></i>
+                    Excel'e Aktar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtreler -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Filtreler</h2>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="form-label">Arama</label>
+                    <input type="text" class="form-control" @bind="searchFilter" @onkeyup="OnSearchChanged" 
+                           placeholder="Firma adı, telefon veya email ile ara...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="form-label">Şehir</label>
+                    <select class="form-control" @bind="cityFilter" @bind:after="OnFilterChanged">
+                        <option value="">Tüm Şehirler</option>
+                        @foreach (var city in cities)
+                        {
+                            <option value="@city">@city</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="form-label">Sıralama</label>
+                    <select class="form-control" @bind="sortBy" @bind:after="OnFilterChanged">
+                        <option value="name">Firma Adı</option>
+                        <option value="date">Oluşturma Tarihi</option>
+                        <option value="city">Şehir</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button class="btn btn-secondary w-100" @onclick="ClearFilters">
+                    <i class="fas fa-times"></i>
+                    Temizle
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Firmalar Tablosu -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Firma Listesi (@filteredFirmalar.Count)</h2>
+    </div>
+    <div class="card-body">
+        @if (isLoading)
+        {
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Yükleniyor...</span>
+                </div>
+            </div>
+        }
+        else if (filteredFirmalar.Any())
+        {
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Firma Adı</th>
+                            <th>İletişim</th>
+                            <th>Adres</th>
+                            <th>Şehir</th>
+                            <th>Oluşturma Tarihi</th>
+                            <th class="text-center">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var firma in filteredFirmalar)
+                        {
+                            <tr>
+                                <td>
+                                    <div>
+                                        <strong>@firma.Ad</strong>
+                                        @if (!string.IsNullOrEmpty(firma.WebSitesi))
+                                        {
+                                            <br>
+                                            <small>
+                                                <a href="@firma.WebSitesi" target="_blank" class="text-primary">
+                                                    <i class="fas fa-globe"></i>
+                                                    Web Sitesi
+                                                </a>
+                                            </small>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(firma.Telefon))
+                                    {
+                                        <div class="mb-1">
+                                            <i class="fas fa-phone text-success"></i>
+                                            <span class="ms-1">@firma.Telefon</span>
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(firma.Email))
+                                    {
+                                        <div>
+                                            <i class="fas fa-envelope text-primary"></i>
+                                            <a href="mailto:@firma.Email" class="text-decoration-none ms-1">@firma.Email</a>
+                                        </div>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(firma.Adres))
+                                    {
+                                        <span title="@firma.Adres">
+                                            @(firma.Adres.Length > 50 ? firma.Adres.Substring(0, 50) + "..." : firma.Adres)
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(firma.Sehir))
+                                    {
+                                        <span class="badge bg-primary">@firma.Sehir</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        @firma.OlusturmaTarihi.ToString("dd.MM.yyyy HH:mm")
+                                    </small>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-outline-primary" @onclick="() => ViewFirma(firma.Id)" title="Görüntüle">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-warning" @onclick="() => EditFirma(firma)" title="Düzenle">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteFirma(firma.Id)" title="Sil">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="fas fa-building fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Firma bulunamadı</h5>
+                <p class="text-muted">Henüz kayıtlı firma yok veya arama kriterlerinize uygun firma bulunamadı.</p>
+                <button class="btn btn-primary" @onclick="OpenAddModal">
+                    <i class="fas fa-plus"></i>
+                    İlk Firma Ekle
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Firma Ekleme/Düzenleme Modal -->
+@if (showModal)
+{
+    <div class="modal" style="display: block; background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-building"></i>
+                        @(isEditing ? "Firma Düzenle" : "Yeni Firma")
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="currentFirma" OnValidSubmit="SaveFirma">
+                        <DataAnnotationsValidator />
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Firma Adı *</label>
+                                    <InputText class="form-control" @bind-Value="currentFirma.Ad" />
+                                    <ValidationMessage For="@(() => currentFirma.Ad)" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Web Sitesi</label>
+                                    <InputText class="form-control" @bind-Value="currentFirma.WebSitesi" placeholder="https://example.com" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Telefon</label>
+                                    <InputText class="form-control" @bind-Value="currentFirma.Telefon" placeholder="0555 123 45 67" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Email</label>
+                                    <InputText class="form-control" @bind-Value="currentFirma.Email" placeholder="info@firma.com" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label">Şehir</label>
+                                    <InputText class="form-control" @bind-Value="currentFirma.Sehir" placeholder="İstanbul" />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label">İlçe</label>
+                                    <InputText class="form-control" @bind-Value="currentFirma.Ilce" placeholder="Kadıköy" />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label">Posta Kodu</label>
+                                    <InputText class="form-control" @bind-Value="currentFirma.PostaKodu" placeholder="34710" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label class="form-label">Adres</label>
+                                    <InputTextArea class="form-control" @bind-Value="currentFirma.Adres" rows="2" placeholder="Tam adres bilgisi..." />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label class="form-label">Notlar</label>
+                                    <InputTextArea class="form-control" @bind-Value="currentFirma.Notlar" rows="3" placeholder="Firma hakkında notlar..." />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseModal">İptal</button>
+                            <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                @if (isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm"></span>
+                                    <span class="ms-2">Kaydediliyor...</span>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-save"></i>
+                                    <span class="ms-2">Kaydet</span>
+                                }
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Firma> firmalar = new();
+    private List<Firma> filteredFirmalar = new();
+    private List<string> cities = new();
+    private Firma currentFirma = new();
+    
+    private bool isLoading = true;
+    private bool showModal = false;
+    private bool isEditing = false;
+    private bool isSaving = false;
+    
+    private string searchFilter = "";
+    private string cityFilter = "";
+    private string sortBy = "name";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFirmalar();
+    }
+
+    private async Task LoadFirmalar()
+    {
+        try
+        {
+            isLoading = true;
+            firmalar = await CrmService.GetFirmalarAsync();
+            cities = firmalar.Where(f => !string.IsNullOrEmpty(f.Sehir))
+                           .Select(f => f.Sehir!)
+                           .Distinct()
+                           .OrderBy(c => c)
+                           .ToList();
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Firmalar yüklenirken hata oluştu: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        filteredFirmalar = firmalar.ToList();
+
+        if (!string.IsNullOrEmpty(searchFilter))
+        {
+            filteredFirmalar = filteredFirmalar.Where(f => 
+                f.Ad.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) ||
+                (f.Telefon?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (f.Email?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
+        }
+
+        if (!string.IsNullOrEmpty(cityFilter))
+        {
+            filteredFirmalar = filteredFirmalar.Where(f => f.Sehir == cityFilter).ToList();
+        }
+
+        filteredFirmalar = sortBy switch
+        {
+            "name" => filteredFirmalar.OrderBy(f => f.Ad).ToList(),
+            "date" => filteredFirmalar.OrderByDescending(f => f.OlusturmaTarihi).ToList(),
+            "city" => filteredFirmalar.OrderBy(f => f.Sehir).ToList(),
+            _ => filteredFirmalar.OrderBy(f => f.Ad).ToList()
+        };
+    }
+
+    private async Task OnSearchChanged()
+    {
+        await Task.Delay(300); // Debounce
+        ApplyFilters();
+        StateHasChanged();
+    }
+
+    private void OnFilterChanged()
+    {
+        ApplyFilters();
+        StateHasChanged();
+    }
+
+    private void ClearFilters()
+    {
+        searchFilter = "";
+        cityFilter = "";
+        sortBy = "name";
+        ApplyFilters();
+        StateHasChanged();
+    }
+
+    private void OpenAddModal()
+    {
+        currentFirma = new Firma();
+        isEditing = false;
+        showModal = true;
+        Console.WriteLine("Add modal opened");
+    }
+
+    private void EditFirma(Firma firma)
+    {
+        currentFirma = new Firma
+        {
+            Id = firma.Id,
+            Ad = firma.Ad,
+            Adres = firma.Adres,
+            Telefon = firma.Telefon,
+            Email = firma.Email,
+            WebSitesi = firma.WebSitesi,
+            Sehir = firma.Sehir,
+            Ilce = firma.Ilce,
+            PostaKodu = firma.PostaKodu,
+            Notlar = firma.Notlar
+        };
+        isEditing = true;
+        showModal = true;
+    }
+
+    private void ViewFirma(int id)
+    {
+        // Firma detay sayfasına yönlendir
+        JSRuntime.InvokeVoidAsync("window.open", $"/firma/{id}", "_blank");
+    }
+
+    private async Task SaveFirma()
+    {
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            if (isEditing)
+            {
+                await CrmService.UpdateFirmaAsync(currentFirma);
+                await JSRuntime.InvokeVoidAsync("eval", "alert('Firma başarıyla güncellendi!')");
+            }
+            else
+            {
+                await CrmService.CreateFirmaAsync(currentFirma);
+                await JSRuntime.InvokeVoidAsync("eval", "alert('Firma başarıyla eklendi!')");
+            }
+
+            CloseModal();
+            await LoadFirmalar();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("eval", $"alert('Hata: {ex.Message}')");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteFirma(int id)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("eval", "confirm('Bu firmayı silmek istediğinizden emin misiniz?')");
+        if (confirmed)
+        {
+            try
+            {
+                await CrmService.DeleteFirmaAsync(id);
+                await JSRuntime.InvokeVoidAsync("eval", "alert('Firma başarıyla silindi!')");
+                await LoadFirmalar();
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("eval", $"alert('Hata: {ex.Message}')");
+            }
+        }
+    }
+
+    private async Task ExportToExcel()
+    {
+        try
+        {
+            var excelData = ExcelExportService.ExportFirmalarToExcel(filteredFirmalar);
+            var fileName = $"Firmalar_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            var base64Data = Convert.ToBase64String(excelData);
+            
+            await JSRuntime.InvokeVoidAsync("eval", $"downloadFile('{fileName}', '{base64Data}')");
+            await JSRuntime.InvokeVoidAsync("eval", "alert('Excel dosyası başarıyla indirildi!')");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("eval", $"alert('Excel export hatası: {ex.Message}')");
+        }
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        currentFirma = new Firma();
+        isEditing = false;
+    }
+}

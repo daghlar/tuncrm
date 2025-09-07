@@ -1,0 +1,378 @@
+@using TunCRM.Services
+@inject CrmService CrmService
+@inject IJSRuntime JS
+
+<div class="global-search-container">
+    <div class="search-input-group">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" 
+               id="global-search"
+               class="form-control search-input" 
+               placeholder="Tüm verilerde ara... (Ctrl+K)"
+               @bind="searchQuery"
+               @onkeydown="OnKeyDown" />
+        <div class="search-shortcut">Ctrl+K</div>
+    </div>
+    
+    @if (showResults && searchResults.Any())
+    {
+        <div class="search-results">
+            @foreach (var result in searchResults.Take(10))
+            {
+                <div class="search-result-item" @onclick="() => NavigateToResult(result)">
+                    <div class="result-icon">
+                        <i class="@GetResultIcon(result.Type)"></i>
+                    </div>
+                    <div class="result-content">
+                        <div class="result-title">@result.Title</div>
+                        <div class="result-subtitle">@result.Subtitle</div>
+                        <div class="result-type">@GetResultTypeName(result.Type)</div>
+                    </div>
+                </div>
+            }
+            
+            @if (searchResults.Count > 10)
+            {
+                <div class="search-more">
+                    <small class="text-muted">+@(searchResults.Count - 10) daha fazla sonuç</small>
+                </div>
+            }
+        </div>
+    }
+    
+    @if (showResults && !searchResults.Any() && !string.IsNullOrEmpty(searchQuery))
+    {
+        <div class="search-results">
+            <div class="search-no-results">
+                <i class="fas fa-search"></i>
+                <p>Sonuç bulunamadı</p>
+                <small>Farklı anahtar kelimeler deneyin</small>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string searchQuery = string.Empty;
+    private List<SearchResult> searchResults = new();
+    private bool showResults = false;
+    private Timer? searchTimer;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("initGlobalSearch");
+        }
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await PerformSearch();
+        }
+        else if (e.Key == "Escape")
+        {
+            showResults = false;
+            searchQuery = string.Empty;
+        }
+    }
+
+    private async Task OnSearchQueryChanged()
+    {
+        if (searchTimer != null)
+        {
+            searchTimer.Dispose();
+        }
+
+        if (string.IsNullOrWhiteSpace(searchQuery))
+        {
+            showResults = false;
+            searchResults.Clear();
+            return;
+        }
+
+        searchTimer = new Timer(async _ => await PerformSearch(), null, 300, Timeout.Infinite);
+    }
+
+    private async Task PerformSearch()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery))
+        {
+            showResults = false;
+            searchResults.Clear();
+            return;
+        }
+
+        try
+        {
+            var results = new List<SearchResult>();
+
+            // Firmaları ara
+            var firmalar = await CrmService.GetFirmalarAsync();
+            var firmaResults = firmalar
+                .Where(f => f.Ad.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                           f.Email?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) == true ||
+                           f.Telefon?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) == true)
+                .Select(f => new SearchResult
+                {
+                    Type = SearchResultType.Firma,
+                    Id = f.Id,
+                    Title = f.Ad,
+                    Subtitle = f.Email ?? f.Telefon ?? "İletişim bilgisi yok",
+                    Url = $"/firmalar/{f.Id}"
+                });
+
+            results.AddRange(firmaResults);
+
+            // Fırsatları ara
+            var firsatlar = await CrmService.GetFirsatlarAsync();
+            var firsatResults = firsatlar
+                .Where(f => f.Ad.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                           f.Aciklama?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) == true)
+                .Select(f => new SearchResult
+                {
+                    Type = SearchResultType.Firsat,
+                    Id = f.Id,
+                    Title = f.Ad,
+                    Subtitle = f.Firma?.Ad ?? "Firma bilgisi yok",
+                    Url = $"/firsatlar/{f.Id}"
+                });
+
+            results.AddRange(firsatResults);
+
+            // Aktiviteleri ara
+            var aktiviteler = await CrmService.GetAktivitelerAsync();
+            var aktiviteResults = aktiviteler
+                .Where(a => a.Baslik.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                           a.Aciklama?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) == true)
+                .Select(a => new SearchResult
+                {
+                    Type = SearchResultType.Aktivite,
+                    Id = a.Id,
+                    Title = a.Baslik,
+                    Subtitle = a.Firma?.Ad ?? a.Firsat?.Ad ?? "İlişkili kayıt yok",
+                    Url = $"/aktiviteler/{a.Id}"
+                });
+
+            results.AddRange(aktiviteResults);
+
+            // Görevleri ara
+            var gorevler = await CrmService.GetGorevlerAsync();
+            var gorevResults = gorevler
+                .Where(g => g.Baslik.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                           g.Aciklama?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) == true)
+                .Select(g => new SearchResult
+                {
+                    Type = SearchResultType.Gorev,
+                    Id = g.Id,
+                    Title = g.Baslik,
+                    Subtitle = g.Firma?.Ad ?? g.Firsat?.Ad ?? "İlişkili kayıt yok",
+                    Url = $"/gorevler/{g.Id}"
+                });
+
+            results.AddRange(gorevResults);
+
+            searchResults = results.OrderBy(r => r.Type).ThenBy(r => r.Title).ToList();
+            showResults = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Arama hatası: {ex.Message}");
+            showResults = false;
+            searchResults.Clear();
+        }
+    }
+
+    private void NavigateToResult(SearchResult result)
+    {
+        // Navigation logic will be implemented
+        showResults = false;
+        searchQuery = string.Empty;
+    }
+
+    private string GetResultIcon(SearchResultType type)
+    {
+        return type switch
+        {
+            SearchResultType.Firma => "fas fa-building",
+            SearchResultType.Firsat => "fas fa-handshake",
+            SearchResultType.Aktivite => "fas fa-calendar",
+            SearchResultType.Gorev => "fas fa-tasks",
+            _ => "fas fa-file"
+        };
+    }
+
+    private string GetResultTypeName(SearchResultType type)
+    {
+        return type switch
+        {
+            SearchResultType.Firma => "Firma",
+            SearchResultType.Firsat => "Fırsat",
+            SearchResultType.Aktivite => "Aktivite",
+            SearchResultType.Gorev => "Görev",
+            _ => "Kayıt"
+        };
+    }
+
+    public class SearchResult
+    {
+        public SearchResultType Type { get; set; }
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Subtitle { get; set; } = string.Empty;
+        public string Url { get; set; } = string.Empty;
+    }
+
+    public enum SearchResultType
+    {
+        Firma,
+        Firsat,
+        Aktivite,
+        Gorev
+    }
+}
+
+<style>
+.global-search-container {
+    position: relative;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.search-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    color: var(--text-muted);
+    z-index: 2;
+}
+
+.search-input {
+    padding-left: 40px;
+    padding-right: 80px;
+    border-radius: 25px;
+    border: 2px solid var(--border-color);
+    background-color: var(--input-bg);
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.search-shortcut {
+    position: absolute;
+    right: 12px;
+    background-color: var(--bg-tertiary);
+    color: var(--text-muted);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1000;
+    margin-top: 4px;
+}
+
+.search-result-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.search-result-item:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.result-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-tertiary);
+    border-radius: 6px;
+    margin-right: 12px;
+    color: var(--primary);
+}
+
+.result-content {
+    flex: 1;
+}
+
+.result-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.result-subtitle {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+}
+
+.result-type {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.search-more {
+    padding: 12px 16px;
+    text-align: center;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-tertiary);
+}
+
+.search-no-results {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.search-no-results i {
+    font-size: 24px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.search-no-results p {
+    margin: 0 0 8px 0;
+    font-weight: 500;
+}
+
+.search-no-results small {
+    font-size: 12px;
+}
+</style>

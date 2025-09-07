@@ -1,0 +1,697 @@
+﻿@page "/"
+@using TunCRM.Services
+@using TunCRM.Models
+@inject CrmService CrmService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Dashboard - TunCRM</PageTitle>
+
+<!-- Sayfa Başlığı -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="card-title">
+                    <i class="fas fa-tachometer-alt text-primary"></i>
+                    Dashboard
+                </h1>
+                <p class="text-muted mb-0">CRM performansınızı takip edin</p>
+            </div>
+            <div>
+                <button class="btn btn-outline-primary" @onclick="RefreshData">
+                    <i class="fas fa-sync-alt"></i>
+                    Yenile
+                </button>
+                <button class="btn btn-success" @onclick="OpenGoogleMapsModal">
+                    <i class="fas fa-map-marker-alt"></i>
+                    Google Maps Scraper
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ana İstatistikler -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center bg-primary text-white">
+            <div class="card-body">
+                <i class="fas fa-building fa-2x mb-2"></i>
+                <h3 class="card-title">@toplamFirma</h3>
+                <p class="card-text">Toplam Firma</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center bg-success text-white">
+            <div class="card-body">
+                <i class="fas fa-handshake fa-2x mb-2"></i>
+                <h3 class="card-title">@toplamFirsat</h3>
+                <p class="card-text">Aktif Fırsat</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center bg-info text-white">
+            <div class="card-body">
+                <i class="fas fa-calendar fa-2x mb-2"></i>
+                <h3 class="card-title">@buAyAktivite</h3>
+                <p class="card-text">Bu Ay Aktivite</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center bg-warning text-white">
+            <div class="card-body">
+                <i class="fas fa-trophy fa-2x mb-2"></i>
+                <h3 class="card-title">@kazanilanFirsat</h3>
+                <p class="card-text">Kazanılan Fırsat</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- İkinci Satır İstatistikler -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-tasks fa-2x text-primary mb-2"></i>
+                <h3 class="card-title">@toplamGorev</h3>
+                <p class="card-text text-muted">Toplam Görev</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-clock fa-2x text-danger mb-2"></i>
+                <h3 class="card-title">@gecikmisGorev</h3>
+                <p class="card-text text-muted">Gecikmiş Görev</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-calendar-day fa-2x text-warning mb-2"></i>
+                <h3 class="card-title">@bugunBitecekGorev</h3>
+                <p class="card-text text-muted">Bugün Bitecek</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                <h3 class="card-title">@tamamlananGorev</h3>
+                <p class="card-text text-muted">Tamamlanan Görev</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 1 -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-chart-pie text-primary"></i>
+                    Fırsat Aşamaları
+                </h5>
+            </div>
+            <div class="card-body">
+                <div style="height: 300px;">
+                    <canvas id="firsatAsamalariChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-chart-line text-success"></i>
+                    Aylık Aktivite Trendi
+                </h5>
+            </div>
+            <div class="card-body">
+                <div style="height: 300px;">
+                    <canvas id="aktiviteTrendiChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 2 -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-chart-bar text-info"></i>
+                    Firma Şehir Dağılımı
+                </h5>
+            </div>
+            <div class="card-body">
+                <div style="height: 300px;">
+                    <canvas id="firmaSehirChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-chart-pie text-warning"></i>
+                    Görev Durumları
+                </h5>
+            </div>
+            <div class="card-body">
+                <div style="height: 300px;">
+                    <canvas id="gorevDurumlariChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 3 -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-chart-area text-success"></i>
+                    Aylık Gelir Trendi
+                </h5>
+            </div>
+            <div class="card-body">
+                <div style="height: 400px;">
+                    <canvas id="gelirTrendiChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Son Aktiviteler -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-history text-primary"></i>
+                    Son Aktiviteler
+                </h5>
+            </div>
+            <div class="card-body">
+                @if (isLoading)
+                {
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Yükleniyor...</span>
+                        </div>
+                    </div>
+                }
+                else if (sonAktiviteler.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var aktivite in sonAktiviteler)
+                        {
+                            <div class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">@aktivite.Baslik</div>
+                                    <small class="text-muted">
+                                        @if (aktivite.Firma != null)
+                                        {
+                                            <i class="fas fa-building"></i> @aktivite.Firma.Ad
+                                        }
+                                        @if (aktivite.Firsat != null)
+                                        {
+                                            <span class="ms-2"><i class="fas fa-handshake"></i> @aktivite.Firsat.Ad</span>
+                                        }
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge @GetAktiviteTipiBadgeClass((int)aktivite.Tip)">
+                                        @GetAktiviteTipiDisplayName((int)aktivite.Tip)
+                                    </span>
+                                    <br>
+                                    <small class="text-muted">@aktivite.Tarih.ToString("dd.MM.yyyy HH:mm")</small>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Aktivite bulunamadı</h5>
+                        <p class="text-muted">Henüz kayıtlı aktivite yok.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                    Önemli Hatırlatıcılar
+                </h5>
+            </div>
+            <div class="card-body">
+                @if (gecikmisGorevler.Any())
+                {
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-clock"></i> Gecikmiş Görevler</h6>
+                        <p class="mb-0">@gecikmisGorevler.Count görev gecikmiş durumda!</p>
+                    </div>
+                }
+                @if (bugunBitecekGorevler.Any())
+                {
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-calendar-day"></i> Bugün Bitecek Görevler</h6>
+                        <p class="mb-0">@bugunBitecekGorevler.Count görev bugün bitiyor!</p>
+                    </div>
+                }
+                @if (!gecikmisGorevler.Any() && !bugunBitecekGorevler.Any())
+                {
+                    <div class="text-center py-3">
+                        <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                        <p class="text-muted mb-0">Tüm görevler zamanında!</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Google Maps Scraper Modal -->
+@if (showGoogleMapsModal)
+{
+    <div class="modal" style="display: block; background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Google Maps Scraper
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseGoogleMapsModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Arama Terimi</label>
+                                <input type="text" class="form-control" @bind="searchTerm" placeholder="Örn: restoran İstanbul">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="form-label">Sonuç Sayısı</label>
+                                <input type="number" class="form-control" @bind="resultCount" min="1" max="50">
+                            </div>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-primary w-100" @onclick="StartScraping" disabled="@isScraping">
+                                @if (isScraping)
+                                {
+                                    <span class="spinner-border spinner-border-sm"></span>
+                                    <span class="ms-2">Taranıyor...</span>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-search"></i>
+                                    <span class="ms-2">Tara</span>
+                                }
+                            </button>
+                        </div>
+                    </div>
+                    @if (scrapedResults.Any())
+                    {
+                        <div class="mt-4">
+                            <h6>Bulunan Sonuçlar (@scrapedResults.Count)</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>İsim</th>
+                                            <th>Adres</th>
+                                            <th>Telefon</th>
+                                            <th>Website</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var result in scrapedResults)
+                                        {
+                                            <tr>
+                                                <td>@result.Name</td>
+                                                <td>@result.Address</td>
+                                                <td>@result.Phone</td>
+                                                <td>@result.Website</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseGoogleMapsModal">Kapat</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .card {
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border-radius: 0.5rem;
+    }
+
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        border-radius: 0.5rem 0.5rem 0 0 !important;
+    }
+
+    .card-title {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .bg-primary { background-color: #007bff !important; }
+    .bg-success { background-color: #28a745 !important; }
+    .bg-info { background-color: #17a2b8 !important; }
+    .bg-warning { background-color: #ffc107 !important; }
+
+    .text-primary { color: #007bff !important; }
+    .text-success { color: #28a745 !important; }
+    .text-info { color: #17a2b8 !important; }
+    .text-warning { color: #ffc107 !important; }
+    .text-danger { color: #dc3545 !important; }
+    .text-muted { color: #6c757d !important; }
+
+    .badge {
+        padding: 0.35em 0.65em;
+        border-radius: 0.25rem;
+        font-weight: bold;
+        color: white;
+        font-size: 0.75em;
+    }
+
+    .bg-secondary { background-color: #6c757d !important; }
+    .bg-primary { background-color: #007bff !important; }
+    .bg-success { background-color: #28a745 !important; }
+    .bg-danger { background-color: #dc3545 !important; }
+    .bg-warning { background-color: #ffc107 !important; color: #212529 !important; }
+    .bg-info { background-color: #17a2b8 !important; }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    .form-control:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .btn {
+        border-radius: 0.375rem;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+    }
+
+    .btn-primary { background-color: #007bff; border-color: #007bff; }
+    .btn-success { background-color: #28a745; border-color: #28a745; }
+    .btn-outline-primary { color: #007bff; border-color: #007bff; }
+    .btn-secondary { background-color: #6c757d; border-color: #6c757d; }
+
+    .list-group-item {
+        border: 1px solid rgba(0, 0, 0, 0.125);
+        border-radius: 0.375rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .fw-bold { font-weight: bold !important; }
+    .small { font-size: 0.875em; }
+</style>
+
+@code {
+    // İstatistikler
+    private int toplamFirma = 0;
+    private int toplamFirsat = 0;
+    private int buAyAktivite = 0;
+    private int kazanilanFirsat = 0;
+    private int toplamGorev = 0;
+    private int gecikmisGorev = 0;
+    private int bugunBitecekGorev = 0;
+    private int tamamlananGorev = 0;
+
+    // Chart verileri
+    private List<FirsatAsamaRaporu> firsatAsamalari = new();
+    private List<AktiviteTrendRaporu> aktiviteTrendi = new();
+    private List<FirmaSehirRaporu> firmaSehirleri = new();
+    private List<GorevDurumRaporu> gorevDurumlari = new();
+    private List<GelirTrendRaporu> gelirTrendi = new();
+
+    // Diğer veriler
+    private List<Aktivite> sonAktiviteler = new();
+    private List<Gorev> gecikmisGorevler = new();
+    private List<Gorev> bugunBitecekGorevler = new();
+
+    // Google Maps Scraper
+    private bool showGoogleMapsModal = false;
+    private bool isScraping = false;
+    private string searchTerm = "";
+    private int resultCount = 20;
+    private List<GoogleMapsResult> scrapedResults = new();
+
+    // Chart referansları
+    private IJSObjectReference? firsatAsamalariChartRef;
+    private IJSObjectReference? aktiviteTrendiChartRef;
+    private IJSObjectReference? firmaSehirChartRef;
+    private IJSObjectReference? gorevDurumlariChartRef;
+    private IJSObjectReference? gelirTrendiChartRef;
+
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CreateCharts();
+        }
+    }
+
+    private async Task LoadDashboardData()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // Temel istatistikler
+            toplamFirma = await CrmService.GetFirmaSayisiAsync();
+            toplamFirsat = await CrmService.GetAktifFirsatSayisiAsync();
+            buAyAktivite = await CrmService.GetBuAyAktiviteSayisiAsync();
+            kazanilanFirsat = await CrmService.GetKazanilanFirsatSayisiAsync();
+
+            // Görev istatistikleri
+            var gorevler = await CrmService.GetGorevlerAsync();
+            toplamGorev = gorevler.Count;
+            gecikmisGorevler = await CrmService.GetGecikmisGorevlerAsync();
+            bugunBitecekGorevler = await CrmService.GetBugunBitecekGorevlerAsync();
+            gecikmisGorev = gecikmisGorevler.Count;
+            bugunBitecekGorev = bugunBitecekGorevler.Count;
+            tamamlananGorev = gorevler.Count(g => g.Durum == GorevDurumu.Tamamlandi);
+
+            // Chart verileri
+            firsatAsamalari = await CrmService.GetFirsatAsamalariRaporuAsync();
+            aktiviteTrendi = await CrmService.GetAktiviteTrendRaporuAsync();
+            firmaSehirleri = await CrmService.GetFirmaSehirRaporuAsync();
+            gorevDurumlari = await CrmService.GetGorevDurumRaporuAsync();
+            gelirTrendi = await CrmService.GetGelirTrendRaporuAsync();
+
+            // Son aktiviteler
+            sonAktiviteler = await CrmService.GetSonAktivitelerAsync(10);
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Veriler yüklenirken hata oluştu: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CreateCharts()
+    {
+        try
+        {
+            // Fırsat Aşamaları Chart
+            var firsatData = new
+            {
+                labels = firsatAsamalari.Select(f => f.AsamaAdi).ToArray(),
+                values = firsatAsamalari.Select(f => f.Sayi).ToArray()
+            };
+            firsatAsamalariChartRef = await JSRuntime.InvokeAsync<IJSObjectReference>("dashboardCharts.createFirsatAsamalariChart", "firsatAsamalariChart", firsatData);
+
+            // Aktivite Trendi Chart
+            var aktiviteData = new
+            {
+                labels = aktiviteTrendi.Select(a => a.Ay).ToArray(),
+                values = aktiviteTrendi.Select(a => a.Sayi).ToArray()
+            };
+            aktiviteTrendiChartRef = await JSRuntime.InvokeAsync<IJSObjectReference>("dashboardCharts.createAktiviteTrendiChart", "aktiviteTrendiChart", aktiviteData);
+
+            // Firma Şehir Chart
+            var firmaData = new
+            {
+                labels = firmaSehirleri.Select(f => f.Sehir).ToArray(),
+                values = firmaSehirleri.Select(f => f.Sayi).ToArray()
+            };
+            firmaSehirChartRef = await JSRuntime.InvokeAsync<IJSObjectReference>("dashboardCharts.createFirmaSehirChart", "firmaSehirChart", firmaData);
+
+            // Görev Durumları Chart
+            var gorevData = new
+            {
+                labels = gorevDurumlari.Select(g => g.DurumAdi).ToArray(),
+                values = gorevDurumlari.Select(g => g.Sayi).ToArray()
+            };
+            gorevDurumlariChartRef = await JSRuntime.InvokeAsync<IJSObjectReference>("dashboardCharts.createGorevDurumlariChart", "gorevDurumlariChart", gorevData);
+
+            // Gelir Trendi Chart
+            var gelirData = new
+            {
+                labels = gelirTrendi.Select(g => g.Ay).ToArray(),
+                values = gelirTrendi.Select(g => g.Tutar).ToArray()
+            };
+            gelirTrendiChartRef = await JSRuntime.InvokeAsync<IJSObjectReference>("dashboardCharts.createGelirTrendiChart", "gelirTrendiChart", gelirData);
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Chart'lar oluşturulurken hata oluştu: {ex.Message}");
+        }
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadDashboardData();
+        await CreateCharts();
+    }
+
+    private void OpenGoogleMapsModal()
+    {
+        showGoogleMapsModal = true;
+    }
+
+    private void CloseGoogleMapsModal()
+    {
+        showGoogleMapsModal = false;
+        scrapedResults.Clear();
+    }
+
+    private async Task StartScraping()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Lütfen arama terimi giriniz!");
+            return;
+        }
+
+        try
+        {
+            isScraping = true;
+            StateHasChanged();
+
+            // Simüle edilmiş Google Maps scraping sonuçları
+            scrapedResults = new List<GoogleMapsResult>
+            {
+                new() { Name = "Örnek Firma 1", Address = "İstanbul, Türkiye", Phone = "+90 212 123 45 67", Website = "www.ornek1.com" },
+                new() { Name = "Örnek Firma 2", Address = "Ankara, Türkiye", Phone = "+90 312 987 65 43", Website = "www.ornek2.com" },
+                new() { Name = "Örnek Firma 3", Address = "İzmir, Türkiye", Phone = "+90 232 555 12 34", Website = "www.ornek3.com" }
+            };
+
+            await JSRuntime.InvokeVoidAsync("alert", $"{scrapedResults.Count} sonuç bulundu!");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Scraping sırasında hata oluştu: {ex.Message}");
+        }
+        finally
+        {
+            isScraping = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetAktiviteTipiDisplayName(int tip)
+    {
+        return tip switch
+        {
+            1 => "Arama",
+            2 => "Görüşme",
+            3 => "Teklif",
+            4 => "Satış",
+            5 => "Takip",
+            _ => "Bilinmiyor"
+        };
+    }
+
+    private string GetAktiviteTipiBadgeClass(int tip)
+    {
+        return tip switch
+        {
+            1 => "bg-info",
+            2 => "bg-primary",
+            3 => "bg-warning",
+            4 => "bg-success",
+            5 => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
+
+    // Google Maps Result sınıfı
+    public class GoogleMapsResult
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Website { get; set; } = string.Empty;
+    }
+}
+}
