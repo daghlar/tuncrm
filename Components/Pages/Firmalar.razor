@@ -399,10 +399,12 @@
 
     private void OpenAddModal()
     {
+        Console.WriteLine("OpenAddModal called");
         currentFirma = new Firma();
         isEditing = false;
         showModal = true;
-        Console.WriteLine("Add modal opened");
+        Console.WriteLine("Add modal opened - showModal: " + showModal);
+        StateHasChanged();
     }
 
     private void EditFirma(Firma firma)
